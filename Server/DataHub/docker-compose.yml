@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # 1. 데이터베이스 방
+  db:
+    image: mysql:8.0
+    container_name: game_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: my_rpg_db
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}    # GitHub Secrets 주입
+    ports:
+      - "3306:3306"                   # 외부 접속 포트
+    volumes:
+      - db_data:/var/lib/mysql        # 컨테이너를 꺼도 데이터가 보존되게 하는 마법의 저장소
+
+  # 2. 서버 방
+  game_server:
+    image: python:3.11-slim
+    container_name: game_server
+    volumes:
+      - .:/code
+    working_dir: /code
+    environment:
+      # 서버가 DB를 찾아갈 주소 (localhost가 아니라 서비스 이름인 'db'를 씁니다)
+      - DATABASE_URL=mysql+pymysql://root:${DB_PASSWORD}@db:3306/my_rpg_db
+      - SECRET_KEY=${SECRET_KEY}
+    command: >
+      sh -c "pip install -r requirements.txt &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db                            # DB가 먼저 켜진 후에 서버를 켜라는 뜻
+
+volumes:
+  db_data:                             # 데이터 보존용 볼륨 정의

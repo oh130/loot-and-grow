@@ -1,0 +1,8 @@
+credentials.json
+.env
+*.pem
+*.key
+repo_access_token.txt
+__pycache__/
+*.pyc
+.DS_Store

@@ -1,0 +1,182 @@
+[
+    {
+        "EnhanceLevel": 1,
+        "SuccessRate": 95,
+        "SwordAdd": 0.4,
+        "StaffAdd": 0.9,
+        "BowAdd": 0.6,
+        "CritChance": 5,
+        "ReqStone": 1
+    },
+    {
+        "EnhanceLevel": 2,
+        "SuccessRate": 90,
+        "SwordAdd": 0.35,
+        "StaffAdd": 0.75,
+        "BowAdd": 0.5,
+        "CritChance": 5,
+        "ReqStone": 3
+    },
+    {
+        "EnhanceLevel": 3,
+        "SuccessRate": 85,
+        "SwordAdd": 0.3,
+        "StaffAdd": 0.65,
+        "BowAdd": 0.45,
+        "CritChance": 5,
+        "ReqStone": 5
+    },
+    {
+        "EnhanceLevel": 4,
+        "SuccessRate": 80,
+        "SwordAdd": 0.25,
+        "StaffAdd": 0.5,
+        "BowAdd": 0.4,
+        "CritChance": 10,
+        "ReqStone": 7
+    },
+    {
+        "EnhanceLevel": 5,
+        "SuccessRate": 70,
+        "SwordAdd": 0.2,
+        "StaffAdd": 0.4,
+        "BowAdd": 0.35,
+        "CritChance": 10,
+        "ReqStone": 10
+    },
+    {
+        "EnhanceLevel": 6,
+        "SuccessRate": 60,
+        "SwordAdd": 0.15,
+        "StaffAdd": 0.3,
+        "BowAdd": 0.25,
+        "CritChance": 10,
+        "ReqStone": 15
+    },
+    {
+        "EnhanceLevel": 7,
+        "SuccessRate": 50,
+        "SwordAdd": 0.12,
+        "StaffAdd": 0.2,
+        "BowAdd": 0.2,
+        "CritChance": 10,
+        "ReqStone": 20
+    },
+    {
+        "EnhanceLevel": 8,
+        "SuccessRate": 40,
+        "SwordAdd": 0.1,
+        "StaffAdd": 0.15,
+        "BowAdd": 0.15,
+        "CritChance": 15,
+        "ReqStone": 30
+    },
+    {
+        "EnhanceLevel": 9,
+        "SuccessRate": 30,
+        "SwordAdd": 0.08,
+        "StaffAdd": 0.1,
+        "BowAdd": 0.07,
+        "CritChance": 15,
+        "ReqStone": 40
+    },
+    {
+        "EnhanceLevel": 10,
+        "SuccessRate": 20,
+        "SwordAdd": 0.05,
+        "StaffAdd": 0.05,
+        "BowAdd": 0.03,
+        "CritChance": 15,
+        "ReqStone": 50
+    },
+    {
+        "EnhanceLevel": 11,
+        "SuccessRate": 5,
+        "SwordAdd": 0,
+        "StaffAdd": 0,
+        "BowAdd": 0,
+        "CritChance": 20,
+        "ReqStone": 100
+    },
+    {
+        "EnhanceLevel": 12,
+        "SuccessRate": 5,
+        "SwordAdd": 0,
+        "StaffAdd": 0,
+        "BowAdd": 0,
+        "CritChance": 25,
+        "ReqStone": 100
+    },
+    {
+        "EnhanceLevel": 13,
+        "SuccessRate": 5,
+        "SwordAdd": 0,
+        "StaffAdd": 0,
+        "BowAdd": 0,
+        "CritChance": 30,
+        "ReqStone": 100
+    },
+    {
+        "EnhanceLevel": 14,
+        "SuccessRate": 5,
+        "SwordAdd": 0,
+        "StaffAdd": 0,
+        "BowAdd": 0,
+        "CritChance": 35,
+        "ReqStone": 100
+    },
+    {
+        "EnhanceLevel": 15,
+        "SuccessRate": 5,
+        "SwordAdd": 0,
+        "StaffAdd": 0,
+        "BowAdd": 0,
+        "CritChance": 40,
+        "ReqStone": 100
+    },
+    {
+        "EnhanceLevel": 16,
+        "SuccessRate": 5,
+        "SwordAdd": 0,
+        "StaffAdd": 0,
+        "BowAdd": 0,
+        "CritChance": 45,
+        "ReqStone": 100
+    },
+    {
+        "EnhanceLevel": 17,
+        "SuccessRate": 5,
+        "SwordAdd": 0,
+        "StaffAdd": 0,
+        "BowAdd": 0,
+        "CritChance": 50,
+        "ReqStone": 100
+    },
+    {
+        "EnhanceLevel": 18,
+        "SuccessRate": 5,
+        "SwordAdd": 0,
+        "StaffAdd": 0,
+        "BowAdd": 0,
+        "CritChance": 55,
+        "ReqStone": 100
+    },
+    {
+        "EnhanceLevel": 19,
+        "SuccessRate": 5,
+        "SwordAdd": 0,
+        "StaffAdd": 0,
+        "BowAdd": 0,
+        "CritChance": 60,
+        "ReqStone": 100
+    },
+    {
+        "EnhanceLevel": 20,
+        "SuccessRate": 5,
+        "SwordAdd": 0,
+        "StaffAdd": 0,
+        "BowAdd": 0,
+        "CritChance": 65,
+        "ReqStone": 100
+    }
+]

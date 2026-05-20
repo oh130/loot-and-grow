@@ -1,0 +1,50 @@
+[
+    {
+        "ItemID": 4000,
+        "Name": "HP 포션",
+        "EffectType": "HP",
+        "EffectValue": 6,
+        "EffectDuration": 0,
+        "Cooltime": 8
+    },
+    {
+        "ItemID": 4001,
+        "Name": "상급 HP 포션",
+        "EffectType": "HP",
+        "EffectValue": 12,
+        "EffectDuration": 0,
+        "Cooltime": 16
+    },
+    {
+        "ItemID": 4010,
+        "Name": "이동 가속 스크롤",
+        "EffectType": "SPD",
+        "EffectValue": 3,
+        "EffectDuration": 6,
+        "Cooltime": 18
+    },
+    {
+        "ItemID": 4011,
+        "Name": "상급 이동 가속 스크롤",
+        "EffectType": "SPD",
+        "EffectValue": 4.5,
+        "EffectDuration": 4,
+        "Cooltime": 30
+    },
+    {
+        "ItemID": 4020,
+        "Name": "공격 가속 스크롤",
+        "EffectType": "APS",
+        "EffectValue": 0.25,
+        "EffectDuration": 6,
+        "Cooltime": 18
+    },
+    {
+        "ItemID": 4021,
+        "Name": "상급 공격 가속 스크롤",
+        "EffectType": "APS",
+        "EffectValue": 0.45,
+        "EffectDuration": 3,
+        "Cooltime": 30
+    }
+]

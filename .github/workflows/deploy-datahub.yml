@@ -1,0 +1,43 @@
+name: Deploy DataHub to AWS
+
+on:
+  push:
+    branches: [ "main" ]
+    # 중요: Server/DataHub 폴더 내부 파일이 수정될 때만 이 로봇이 작동합니다.
+    paths:
+      - 'Server/DataHub/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DATAHUB_HOST }}
+          username: ${{ secrets.DATAHUB_USER }}
+          key: ${{ secrets.DATAHUB_SSH_KEY }}
+          script: |
+            # 1. 해당 폴더로 이동
+            cd ~/Capstone-Crunch/Server/DataHub
+            
+            # 2. 최신 코드 가져오기 (force push 이후에도 안전하게 동기화)
+            git fetch origin && git reset --hard origin/main
+            
+            # 3. 금고(Secrets)에서 꺼낸 내용으로 credentials.json 파일 생성/교체
+            echo '${{ secrets.DATAHUB_CREDENTIALS }}' > credentials.json
+
+            # 4. 환경변수 파일 생성/교체 (비밀값은 GitHub Secrets에서 주입)
+            cat > .env << 'EOF'
+            SECRET_KEY=${{ secrets.DATAHUB_SECRET_KEY }}
+            DB_PASSWORD=${{ secrets.DATAHUB_DB_PASSWORD }}
+            EOF
+
+            # 5. 도커 컨테이너 빌드 및 백그라운드 실행
+            docker compose up --build -d
+
+            # 6. game_server 재시작 (코드/데이터 변경 시 반드시 재시작해야 반영됨)
+            docker compose restart game_server

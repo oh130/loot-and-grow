@@ -1,0 +1,442 @@
+[
+    {
+        "ItemID": 3000,
+        "Name": "하급 모자",
+        "ItemType": "Equipment",
+        "Grade": "Low",
+        "Sell": 32,
+        "Buy": 80,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Hat/Hat_0.png"
+    },
+    {
+        "ItemID": 3001,
+        "Name": "중급 모자",
+        "ItemType": "Equipment",
+        "Grade": "Mid",
+        "Sell": 88,
+        "Buy": 220,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Hat/Hat_1.png"
+    },
+    {
+        "ItemID": 3002,
+        "Name": "상급 모자",
+        "ItemType": "Equipment",
+        "Grade": "High",
+        "Sell": 200,
+        "Buy": 500,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Hat/Hat_2.png"
+    },
+    {
+        "ItemID": 3003,
+        "Name": "최상급 모자",
+        "ItemType": "Equipment",
+        "Grade": "Top",
+        "Sell": 350,
+        "Buy": 875,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Hat/Hat_3.png"
+    },
+    {
+        "ItemID": 3020,
+        "Name": "하급 상의",
+        "ItemType": "Equipment",
+        "Grade": "Low",
+        "Sell": 32,
+        "Buy": 80,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Top/Top_0.png"
+    },
+    {
+        "ItemID": 3021,
+        "Name": "중급 상의",
+        "ItemType": "Equipment",
+        "Grade": "Mid",
+        "Sell": 88,
+        "Buy": 220,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Top/Top_1.png"
+    },
+    {
+        "ItemID": 3022,
+        "Name": "상급 상의",
+        "ItemType": "Equipment",
+        "Grade": "High",
+        "Sell": 200,
+        "Buy": 500,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Top/Top_2.png"
+    },
+    {
+        "ItemID": 3023,
+        "Name": "최상급 상의",
+        "ItemType": "Equipment",
+        "Grade": "Top",
+        "Sell": 350,
+        "Buy": 875,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Top/Top_3.png"
+    },
+    {
+        "ItemID": 3040,
+        "Name": "하급 하의",
+        "ItemType": "Equipment",
+        "Grade": "Low",
+        "Sell": 32,
+        "Buy": 80,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Bottom/Bottom_0.png"
+    },
+    {
+        "ItemID": 3041,
+        "Name": "중급 하의",
+        "ItemType": "Equipment",
+        "Grade": "Mid",
+        "Sell": 88,
+        "Buy": 220,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Bottom/Bottom_1.png"
+    },
+    {
+        "ItemID": 3042,
+        "Name": "상급 하의",
+        "ItemType": "Equipment",
+        "Grade": "High",
+        "Sell": 200,
+        "Buy": 500,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Bottom/Bottom_2.png"
+    },
+    {
+        "ItemID": 3043,
+        "Name": "최상급 하의",
+        "ItemType": "Equipment",
+        "Grade": "Top",
+        "Sell": 350,
+        "Buy": 875,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Bottom/Bottom_3.png"
+    },
+    {
+        "ItemID": 3060,
+        "Name": "하급 장신구",
+        "ItemType": "Equipment",
+        "Grade": "Low",
+        "Sell": 40,
+        "Buy": 100,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Accessory/Accessory_0.png"
+    },
+    {
+        "ItemID": 3061,
+        "Name": "중급 장신구",
+        "ItemType": "Equipment",
+        "Grade": "Mid",
+        "Sell": 104,
+        "Buy": 260,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Accessory/Accessory_1.png"
+    },
+    {
+        "ItemID": 3062,
+        "Name": "상급 장신구",
+        "ItemType": "Equipment",
+        "Grade": "High",
+        "Sell": 240,
+        "Buy": 600,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Accessory/Accessory_2.png"
+    },
+    {
+        "ItemID": 3063,
+        "Name": "최상급 장신구",
+        "ItemType": "Equipment",
+        "Grade": "Top",
+        "Sell": 420,
+        "Buy": 1050,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Accessory/Accessory_3.png"
+    },
+    {
+        "ItemID": 3080,
+        "Name": "하급 검",
+        "ItemType": "Equipment",
+        "Grade": "Low",
+        "Sell": 48,
+        "Buy": 120,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Sword_0.png"
+    },
+    {
+        "ItemID": 3081,
+        "Name": "중급 검",
+        "ItemType": "Equipment",
+        "Grade": "Mid",
+        "Sell": 128,
+        "Buy": 320,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Sword_1.png"
+    },
+    {
+        "ItemID": 3082,
+        "Name": "상급 검",
+        "ItemType": "Equipment",
+        "Grade": "High",
+        "Sell": 260,
+        "Buy": 650,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Sword_2.png"
+    },
+    {
+        "ItemID": 3083,
+        "Name": "최상급 검",
+        "ItemType": "Equipment",
+        "Grade": "Top",
+        "Sell": 480,
+        "Buy": 1200,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Sword_3.png"
+    },
+    {
+        "ItemID": 3084,
+        "Name": "하급 스태프",
+        "ItemType": "Equipment",
+        "Grade": "Low",
+        "Sell": 48,
+        "Buy": 120,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Staff_0.png"
+    },
+    {
+        "ItemID": 3085,
+        "Name": "중급 스태프",
+        "ItemType": "Equipment",
+        "Grade": "Mid",
+        "Sell": 128,
+        "Buy": 320,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Staff_1.png"
+    },
+    {
+        "ItemID": 3086,
+        "Name": "상급 스태프",
+        "ItemType": "Equipment",
+        "Grade": "High",
+        "Sell": 260,
+        "Buy": 650,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Staff_2.png"
+    },
+    {
+        "ItemID": 3087,
+        "Name": "최상급 스태프",
+        "ItemType": "Equipment",
+        "Grade": "Top",
+        "Sell": 480,
+        "Buy": 1200,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Staff_3.png"
+    },
+    {
+        "ItemID": 3088,
+        "Name": "하급 활",
+        "ItemType": "Equipment",
+        "Grade": "Low",
+        "Sell": 48,
+        "Buy": 120,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Bow_0.png"
+    },
+    {
+        "ItemID": 3089,
+        "Name": "중급 활",
+        "ItemType": "Equipment",
+        "Grade": "Mid",
+        "Sell": 128,
+        "Buy": 320,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Bow_1.png"
+    },
+    {
+        "ItemID": 3090,
+        "Name": "상급 활",
+        "ItemType": "Equipment",
+        "Grade": "High",
+        "Sell": 260,
+        "Buy": 650,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Bow_2.png"
+    },
+    {
+        "ItemID": 3091,
+        "Name": "최상급 활",
+        "ItemType": "Equipment",
+        "Grade": "Top",
+        "Sell": 480,
+        "Buy": 1200,
+        "MaxStack": 0,
+        "Path": "Assets/ExternAssets/IconImage/Weapon/Bow_3.png"
+    },
+    {
+        "ItemID": 4000,
+        "Name": "HP 포션",
+        "ItemType": "Consumable",
+        "Grade": "Low",
+        "Sell": 16,
+        "Buy": 40,
+        "MaxStack": 50,
+        "Path": "Assets/ExternAssets/IconImage/Item/HP포션.png"
+    },
+    {
+        "ItemID": 4001,
+        "Name": "상급 HP 포션",
+        "ItemType": "Consumable",
+        "Grade": "High",
+        "Sell": 32,
+        "Buy": 80,
+        "MaxStack": 50,
+        "Path": "Assets/ExternAssets/IconImage/Item/상급HP포션.png"
+    },
+    {
+        "ItemID": 4010,
+        "Name": "이동 가속 스크롤",
+        "ItemType": "Consumable",
+        "Grade": "Low",
+        "Sell": 24,
+        "Buy": 60,
+        "MaxStack": 10,
+        "Path": "Assets/ExternAssets/IconImage/Item/이동가속스크롤.png"
+    },
+    {
+        "ItemID": 4011,
+        "Name": "상급 이동 가속 스크롤",
+        "ItemType": "Consumable",
+        "Grade": "High",
+        "Sell": 48,
+        "Buy": 120,
+        "MaxStack": 10,
+        "Path": "Assets/ExternAssets/IconImage/Item/상급이동가속스크롤.png"
+    },
+    {
+        "ItemID": 4020,
+        "Name": "공격 가속 스크롤",
+        "ItemType": "Consumable",
+        "Grade": "Low",
+        "Sell": 32,
+        "Buy": 80,
+        "MaxStack": 10,
+        "Path": "Assets/ExternAssets/IconImage/Item/공격가속스크롤.png"
+    },
+    {
+        "ItemID": 4021,
+        "Name": "상급 공격 가속 스크롤",
+        "ItemType": "Consumable",
+        "Grade": "High",
+        "Sell": 64,
+        "Buy": 160,
+        "MaxStack": 10,
+        "Path": "Assets/ExternAssets/IconImage/Item/상급공격가속스크롤.png"
+    },
+    {
+        "ItemID": 5000,
+        "Name": "낡은 주머니",
+        "ItemType": "Material",
+        "Grade": "Low",
+        "Sell": 15,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/낡은주머니.png"
+    },
+    {
+        "ItemID": 5001,
+        "Name": "장식 반지",
+        "ItemType": "Material",
+        "Grade": "Mid",
+        "Sell": 40,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/장식반지.png"
+    },
+    {
+        "ItemID": 5002,
+        "Name": "귀금속",
+        "ItemType": "Material",
+        "Grade": "High",
+        "Sell": 100,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/귀금속.png"
+    },
+    {
+        "ItemID": 5003,
+        "Name": "보석",
+        "ItemType": "Material",
+        "Grade": "Top",
+        "Sell": 250,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/보석.png"
+    },
+    {
+        "ItemID": 5010,
+        "Name": "강화석",
+        "ItemType": "Material",
+        "Grade": "Mid",
+        "Sell": 60,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/강화석.png"
+    },
+    {
+        "ItemID": 5011,
+        "Name": "상급 강화석",
+        "ItemType": "Material",
+        "Grade": "Top",
+        "Sell": 150,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/상급강화석.png"
+    },
+    {
+        "ItemID": 5500,
+        "Name": "철 광석",
+        "ItemType": "Material",
+        "Grade": "Low",
+        "Sell": 10,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/철광석.png"
+    },
+    {
+        "ItemID": 5501,
+        "Name": "은 광석",
+        "ItemType": "Material",
+        "Grade": "Mid",
+        "Sell": 35,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/은광석.png"
+    },
+    {
+        "ItemID": 5502,
+        "Name": "금 광석",
+        "ItemType": "Material",
+        "Grade": "High",
+        "Sell": 80,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/금광석.png"
+    },
+    {
+        "ItemID": 5503,
+        "Name": "루비 광석",
+        "ItemType": "Material",
+        "Grade": "Top",
+        "Sell": 225,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/루비광석.png"
+    }
+]

@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  data-exporter:
+    build: .  # 현재 폴더의 Dockerfile을 읽어서 이미지를 만듦
+    volumes:
+      # [내 컴퓨터 경로]:[도커 내부 경로]
+      # 도커 안의 /app/Datas에 써지는 파일이 내 컴퓨터의 ./Datas에 나타나게 함
+      - ./Datas:/app/Datas
+      # 내 컴퓨터의 키 파일을 도커 안으로 전달
+      - ./credentials.json:/app/credentials.json
+      # 서버 data/ 폴더 마운트 (ItemTable.json 서버에 직접 쓰기용)
+      - ../Server/DataHub/app/data:/Server/DataHub/app/data

@@ -1,0 +1,9 @@
+fastapi[all]
+sqlalchemy
+pymysql
+pydantic
+uvicorn
+cryptography
+passlib[bcrypt]
+bcrypt==4.0.1
+python-jose[cryptography]

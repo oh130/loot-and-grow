@@ -1,0 +1,101 @@
+[
+    {
+        "EnemyID": 1000,
+        "Name": "고블린",
+        "HP": 12,
+        "ATK": 2,
+        "DEF": 0,
+        "APS": 0.6,
+        "SPD": 5.5,
+        "HPR": 0,
+        "LootID": 10
+    },
+    {
+        "EnemyID": 1001,
+        "Name": "어린 오크",
+        "HP": 20,
+        "ATK": 3,
+        "DEF": 2,
+        "APS": 0.9,
+        "SPD": 3.8,
+        "HPR": 0,
+        "LootID": 10
+    },
+    {
+        "EnemyID": 1010,
+        "Name": "트롤",
+        "HP": 50,
+        "ATK": 4,
+        "DEF": 4,
+        "APS": 0.8,
+        "SPD": 3.5,
+        "HPR": 1.5,
+        "LootID": 11
+    },
+    {
+        "EnemyID": 1011,
+        "Name": "성체 오크",
+        "HP": 60,
+        "ATK": 6,
+        "DEF": 3,
+        "APS": 0.7,
+        "SPD": 3,
+        "HPR": 0,
+        "LootID": 11
+    },
+    {
+        "EnemyID": 1020,
+        "Name": "스켈레톤",
+        "HP": 15,
+        "ATK": 2,
+        "DEF": 1,
+        "APS": 1,
+        "SPD": 4.5,
+        "HPR": 0,
+        "LootID": 20
+    },
+    {
+        "EnemyID": 1021,
+        "Name": "검사 스켈레톤",
+        "HP": 25,
+        "ATK": 4,
+        "DEF": 2,
+        "APS": 1.1,
+        "SPD": 4,
+        "HPR": 0,
+        "LootID": 21
+    },
+    {
+        "EnemyID": 1022,
+        "Name": "궁수 스켈레톤",
+        "HP": 18,
+        "ATK": 3,
+        "DEF": 1,
+        "APS": 0.6,
+        "SPD": 4.8,
+        "HPR": 0,
+        "LootID": 22
+    },
+    {
+        "EnemyID": 1023,
+        "Name": "마법사 스켈레톤",
+        "HP": 12,
+        "ATK": 6,
+        "DEF": 0,
+        "APS": 0.8,
+        "SPD": 4,
+        "HPR": 0,
+        "LootID": 23
+    },
+    {
+        "EnemyID": 2000,
+        "Name": "골렘",
+        "HP": 150,
+        "ATK": 7,
+        "DEF": 8,
+        "APS": 0.6,
+        "SPD": 2.8,
+        "HPR": 0,
+        "LootID": 100
+    }
+]

@@ -1,0 +1,723 @@
+[
+    {
+        "LootID": 10,
+        "ItemID": 5000,
+        "DropChance": 35,
+        "MinQty": 1,
+        "MaxQty": 3
+    },
+    {
+        "LootID": 10,
+        "ItemID": 4000,
+        "DropChance": 35,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 10,
+        "ItemID": 4010,
+        "DropChance": 35,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 10,
+        "ItemID": 3000,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 10,
+        "ItemID": 3020,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 10,
+        "ItemID": 3040,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 10,
+        "ItemID": 3060,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 10,
+        "ItemID": 3080,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 10,
+        "ItemID": 3088,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 10,
+        "ItemID": 3084,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 11,
+        "ItemID": 5001,
+        "DropChance": 25,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 11,
+        "ItemID": 5002,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 11,
+        "ItemID": 4000,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 11,
+        "ItemID": 4020,
+        "DropChance": 10,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 11,
+        "ItemID": 5010,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 3
+    },
+    {
+        "LootID": 11,
+        "ItemID": 3001,
+        "DropChance": 4,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 11,
+        "ItemID": 3021,
+        "DropChance": 4,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 11,
+        "ItemID": 3041,
+        "DropChance": 4,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 11,
+        "ItemID": 3081,
+        "DropChance": 4,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 11,
+        "ItemID": 3089,
+        "DropChance": 2,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 11,
+        "ItemID": 3085,
+        "DropChance": 2,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 20,
+        "ItemID": 5001,
+        "DropChance": 30,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 20,
+        "ItemID": 5002,
+        "DropChance": 10,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 20,
+        "ItemID": 4010,
+        "DropChance": 20,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 20,
+        "ItemID": 5010,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 20,
+        "ItemID": 3088,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 20,
+        "ItemID": 3089,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 20,
+        "ItemID": 3060,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 20,
+        "ItemID": 3061,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 21,
+        "ItemID": 5002,
+        "DropChance": 20,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 21,
+        "ItemID": 5003,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 21,
+        "ItemID": 5010,
+        "DropChance": 20,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 21,
+        "ItemID": 5011,
+        "DropChance": 10,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 21,
+        "ItemID": 3081,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 21,
+        "ItemID": 3082,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 21,
+        "ItemID": 3022,
+        "DropChance": 10,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 21,
+        "ItemID": 3042,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 22,
+        "ItemID": 5002,
+        "DropChance": 20,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 22,
+        "ItemID": 5003,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 22,
+        "ItemID": 4010,
+        "DropChance": 20,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 22,
+        "ItemID": 5010,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 22,
+        "ItemID": 3089,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 22,
+        "ItemID": 3090,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 22,
+        "ItemID": 3062,
+        "DropChance": 10,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 23,
+        "ItemID": 5002,
+        "DropChance": 20,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 23,
+        "ItemID": 5003,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 23,
+        "ItemID": 4010,
+        "DropChance": 20,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 23,
+        "ItemID": 5010,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 23,
+        "ItemID": 3089,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 23,
+        "ItemID": 3090,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 23,
+        "ItemID": 3062,
+        "DropChance": 10,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 100,
+        "ItemID": 5003,
+        "DropChance": 30,
+        "MinQty": 2,
+        "MaxQty": 5
+    },
+    {
+        "LootID": 100,
+        "ItemID": 5011,
+        "DropChance": 25,
+        "MinQty": 1,
+        "MaxQty": 3
+    },
+    {
+        "LootID": 100,
+        "ItemID": 5002,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 3
+    },
+    {
+        "LootID": 100,
+        "ItemID": 3002,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 100,
+        "ItemID": 3022,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 100,
+        "ItemID": 3042,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 100,
+        "ItemID": 3003,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 100,
+        "ItemID": 3023,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 100,
+        "ItemID": 3043,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 100,
+        "ItemID": 3083,
+        "DropChance": 2,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 100,
+        "ItemID": 3091,
+        "DropChance": 2,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 100,
+        "ItemID": 3087,
+        "DropChance": 2,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 100,
+        "ItemID": 3063,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 200,
+        "ItemID": 5500,
+        "DropChance": 100,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 200,
+        "ItemID": 5501,
+        "DropChance": 10,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 200,
+        "ItemID": 5502,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 201,
+        "ItemID": 5500,
+        "DropChance": 100,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 201,
+        "ItemID": 5501,
+        "DropChance": 70,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 201,
+        "ItemID": 5502,
+        "DropChance": 10,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 201,
+        "ItemID": 5503,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 202,
+        "ItemID": 5501,
+        "DropChance": 100,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 202,
+        "ItemID": 5502,
+        "DropChance": 50,
+        "MinQty": 1,
+        "MaxQty": 3
+    },
+    {
+        "LootID": 202,
+        "ItemID": 5503,
+        "DropChance": 20,
+        "MinQty": 1,
+        "MaxQty": 2
+    },
+    {
+        "LootID": 203,
+        "ItemID": 5502,
+        "DropChance": 100,
+        "MinQty": 3,
+        "MaxQty": 3
+    },
+    {
+        "LootID": 203,
+        "ItemID": 5503,
+        "DropChance": 100,
+        "MinQty": 2,
+        "MaxQty": 3
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3001,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3002,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3003,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3021,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3022,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3023,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3041,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3042,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3043,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3061,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3062,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 210,
+        "ItemID": 3063,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 211,
+        "ItemID": 3081,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 211,
+        "ItemID": 3082,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 211,
+        "ItemID": 3083,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 211,
+        "ItemID": 3085,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 211,
+        "ItemID": 3086,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 211,
+        "ItemID": 3087,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 211,
+        "ItemID": 3089,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 211,
+        "ItemID": 3090,
+        "DropChance": 5,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 211,
+        "ItemID": 3091,
+        "DropChance": 3,
+        "MinQty": 1,
+        "MaxQty": 1
+    },
+    {
+        "LootID": 212,
+        "ItemID": 4000,
+        "DropChance": 30,
+        "MinQty": 3,
+        "MaxQty": 6
+    },
+    {
+        "LootID": 212,
+        "ItemID": 4001,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 4
+    },
+    {
+        "LootID": 212,
+        "ItemID": 4010,
+        "DropChance": 30,
+        "MinQty": 3,
+        "MaxQty": 6
+    },
+    {
+        "LootID": 212,
+        "ItemID": 4011,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 4
+    },
+    {
+        "LootID": 212,
+        "ItemID": 4020,
+        "DropChance": 30,
+        "MinQty": 3,
+        "MaxQty": 6
+    },
+    {
+        "LootID": 212,
+        "ItemID": 4021,
+        "DropChance": 15,
+        "MinQty": 1,
+        "MaxQty": 4
+    }
+]
