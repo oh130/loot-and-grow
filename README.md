@@ -19,9 +19,9 @@
 | 영역 | 기술 |
 |------|------|
 | 클라이언트 | Unity 6 (URP), C#, Netcode for GameObjects |
-| 서버 | Python, FastAPI, SQLAlchemy, Docker |
-| 인프라 | AWS EC2, GitHub Actions |
-| 데이터 | Google Sheets → JSON → ScriptableObject 자동화 |
+| 서버 | Python, FastAPI, SQLAlchemy, MySQL |
+| 인프라 | Docker, AWS EC2, GitHub Actions |
+| 도구 | Google Sheets API |
 
 ---
 
