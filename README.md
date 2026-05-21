@@ -8,9 +8,9 @@
 
 ---
 
-## 스크린샷
+## 플레이 화면
 
-<!-- 스크린샷 추가 예정 -->
+<img width="640" height="361" alt="Image" src="https://github.com/user-attachments/assets/c192249a-fa22-4688-9895-09859bbe8aee" />
 
 ---
 
