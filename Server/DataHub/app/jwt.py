@@ -10,7 +10,7 @@ import os
 import secrets
 
 # 토큰 서명에 사용하는 비밀 키 — 환경변수에서 읽음 (docker-compose.yml → .env)
-SECRET_KEY = os.environ.get("SECRET_KEY", "capstone-crunch-secret-key")
+SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 REFRESH_TOKEN_EXPIRE_DAYS = 90

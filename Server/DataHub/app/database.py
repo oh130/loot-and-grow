@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # 1. 도커 컨테이너 환경변수에서 DB 주소를 가져옵니다.
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:password1234@db:3306/my_rpg_db")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://user:password@db:3306/my_rpg_db")
 
 # 2. DB 엔진 생성 (실제 도로 건설)
 engine = create_engine(
