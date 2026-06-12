@@ -9,14 +9,14 @@
     {
         "LootID": 10,
         "ItemID": 4000,
-        "DropChance": 35,
+        "DropChance": 60,
         "MinQty": 1,
         "MaxQty": 2
     },
     {
         "LootID": 10,
         "ItemID": 4010,
-        "DropChance": 35,
+        "DropChance": 40,
         "MinQty": 1,
         "MaxQty": 1
     },
@@ -86,23 +86,23 @@
     {
         "LootID": 11,
         "ItemID": 4000,
-        "DropChance": 15,
+        "DropChance": 35,
         "MinQty": 1,
         "MaxQty": 2
     },
     {
         "LootID": 11,
         "ItemID": 4020,
-        "DropChance": 10,
+        "DropChance": 20,
         "MinQty": 1,
         "MaxQty": 1
     },
     {
         "LootID": 11,
         "ItemID": 5010,
-        "DropChance": 15,
+        "DropChance": 30,
         "MinQty": 1,
-        "MaxQty": 3
+        "MaxQty": 4
     },
     {
         "LootID": 11,
@@ -163,16 +163,16 @@
     {
         "LootID": 20,
         "ItemID": 4010,
-        "DropChance": 20,
+        "DropChance": 35,
         "MinQty": 1,
         "MaxQty": 2
     },
     {
         "LootID": 20,
         "ItemID": 5010,
-        "DropChance": 15,
+        "DropChance": 40,
         "MinQty": 1,
-        "MaxQty": 2
+        "MaxQty": 3
     },
     {
         "LootID": 20,
@@ -219,16 +219,9 @@
     {
         "LootID": 21,
         "ItemID": 5010,
-        "DropChance": 20,
+        "DropChance": 40,
         "MinQty": 1,
-        "MaxQty": 2
-    },
-    {
-        "LootID": 21,
-        "ItemID": 5011,
-        "DropChance": 10,
-        "MinQty": 1,
-        "MaxQty": 2
+        "MaxQty": 3
     },
     {
         "LootID": 21,
@@ -282,9 +275,9 @@
     {
         "LootID": 22,
         "ItemID": 5010,
-        "DropChance": 15,
+        "DropChance": 30,
         "MinQty": 1,
-        "MaxQty": 2
+        "MaxQty": 3
     },
     {
         "LootID": 22,
@@ -331,9 +324,9 @@
     {
         "LootID": 23,
         "ItemID": 5010,
-        "DropChance": 15,
+        "DropChance": 30,
         "MinQty": 1,
-        "MaxQty": 2
+        "MaxQty": 3
     },
     {
         "LootID": 23,
@@ -359,91 +352,91 @@
     {
         "LootID": 100,
         "ItemID": 5003,
-        "DropChance": 30,
+        "DropChance": 100,
         "MinQty": 2,
         "MaxQty": 5
     },
     {
         "LootID": 100,
-        "ItemID": 5011,
-        "DropChance": 25,
+        "ItemID": 5002,
+        "DropChance": 100,
         "MinQty": 1,
         "MaxQty": 3
     },
     {
         "LootID": 100,
-        "ItemID": 5002,
-        "DropChance": 15,
-        "MinQty": 1,
-        "MaxQty": 3
+        "ItemID": 5010,
+        "DropChance": 100,
+        "MinQty": 5,
+        "MaxQty": 10
     },
     {
         "LootID": 100,
         "ItemID": 3002,
-        "DropChance": 3,
+        "DropChance": 8,
         "MinQty": 1,
         "MaxQty": 1
     },
     {
         "LootID": 100,
         "ItemID": 3022,
-        "DropChance": 3,
+        "DropChance": 8,
         "MinQty": 1,
         "MaxQty": 1
     },
     {
         "LootID": 100,
         "ItemID": 3042,
-        "DropChance": 3,
+        "DropChance": 8,
         "MinQty": 1,
         "MaxQty": 1
     },
     {
         "LootID": 100,
         "ItemID": 3003,
-        "DropChance": 3,
+        "DropChance": 8,
         "MinQty": 1,
         "MaxQty": 1
     },
     {
         "LootID": 100,
         "ItemID": 3023,
-        "DropChance": 3,
+        "DropChance": 8,
         "MinQty": 1,
         "MaxQty": 1
     },
     {
         "LootID": 100,
         "ItemID": 3043,
-        "DropChance": 3,
+        "DropChance": 8,
         "MinQty": 1,
         "MaxQty": 1
     },
     {
         "LootID": 100,
         "ItemID": 3083,
-        "DropChance": 2,
+        "DropChance": 8,
         "MinQty": 1,
         "MaxQty": 1
     },
     {
         "LootID": 100,
         "ItemID": 3091,
-        "DropChance": 2,
+        "DropChance": 8,
         "MinQty": 1,
         "MaxQty": 1
     },
     {
         "LootID": 100,
         "ItemID": 3087,
-        "DropChance": 2,
+        "DropChance": 8,
         "MinQty": 1,
         "MaxQty": 1
     },
     {
         "LootID": 100,
         "ItemID": 3063,
-        "DropChance": 3,
+        "DropChance": 8,
         "MinQty": 1,
         "MaxQty": 1
     },
@@ -530,6 +523,13 @@
         "DropChance": 100,
         "MinQty": 2,
         "MaxQty": 3
+    },
+    {
+        "LootID": 204,
+        "ItemID": 5004,
+        "DropChance": 100,
+        "MinQty": 1,
+        "MaxQty": 2
     },
     {
         "LootID": 210,

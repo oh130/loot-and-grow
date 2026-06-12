@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using TMPro;
 using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UI;
 
 
 public class GameManager : MonoBehaviour
@@ -22,6 +24,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private UI_Admin uiAdmin;
     [SerializeField] private UI_Blinder uiBlinder;
     [SerializeField] private UI_Death uiDeath;
+    [SerializeField] private UI_ExitConfirmPopup uiExit;
+    [SerializeField] private CanvasScaler canvasScaler;
+    [SerializeField] private TMP_Text pvpText;
 
     [Header("구역 범위 지정")]
     [SerializeField] private List<AreaInfo> areaInfos = new List<AreaInfo>();
@@ -31,26 +36,35 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null)
+        if (Instance != null && Instance != this)
         {
-            Destroy(this);
-            return;
+            // DDOL에 남아있던 스테일 GameManager 컴포넌트만 교체 (gameObject는 유지)
+            Destroy(Instance);
         }
         Instance = this;
-        Application.targetFrameRate = 60;
 #if UNITY_SERVER
         Application.targetFrameRate = 30;
 #endif
 
+        float aspectRatio = (float)Screen.height / Screen.width;
+
+        if (aspectRatio >= 0.8f)
+        {
+            canvasScaler.matchWidthOrHeight = 0.65f; 
+        }
+
+        SoundManager.Instance?.StopBGM();
+        SoundManager.Instance?.PlayBGM("InGame");
+
+        GraphicsManager.Instance?.RefreshCamera();
         ToggleBlinderUI();
     }
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Space))
+        if(Input.GetKeyDown(KeyCode.Escape))
         {
-            // SoundManager.Instance?.PlaySFX3D("test", player.transform.position + Vector3.forward * 5f);
-            // SoundManager.Instance?.PlayBGM("test");
+            uiExit?.ToggleUI();
         }
     }
 
@@ -68,13 +82,16 @@ public class GameManager : MonoBehaviour
 
     public void ToggleBlinderUI()
     {
-        uiBlinder.ToggleUI();
+        uiBlinder?.ToggleUI();
     }
 
     public void ProcessDeath(bool isStart, string killerName = "")
     {
         if(isStart)
         {
+            SoundManager.Instance?.StopBGM();
+            SoundManager.Instance?.PlayBGM("Die");
+
             HUD.HideUI();
 
             uiDeath.Init(killerName);
@@ -82,6 +99,9 @@ public class GameManager : MonoBehaviour
         }
         else
         {
+            SoundManager.Instance?.StopBGM();
+            SoundManager.Instance?.PlayBGM("InGame");
+
             HUD.ShowUI();
             uiDeath.ToggleUI();
         }
@@ -99,5 +119,12 @@ public class GameManager : MonoBehaviour
             }
         }
         areaType = AreaType.PVP;
+    }
+
+    public void OnAreaChanged(AreaType newArea)
+    {
+        if(newArea == AreaType.PVP) pvpText.text = "<color=red>전투 가능 구역</color>";
+        else if(newArea == AreaType.PVE || newArea == AreaType.Gather) pvpText.text = "<color=orange>사냥 가능 구역</color>";
+        else pvpText.text = "<color=green>안전 구역</color>";
     }
 }

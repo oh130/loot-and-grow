@@ -13,17 +13,6 @@ public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance { get; private set; }
 
-    [Header("SO 참조")]
-    [SerializeField] private ItemTableSO         itemTable;
-    [SerializeField] private EquipmentDetailSO   equipDetail;
-    [SerializeField] private ConsumableDetailSO  consumableDetail;
-    [SerializeField] private EnhanceTableSO      enhanceTable;
-
-    public ItemTableSO         ItemTable     => itemTable;
-    public EquipmentDetailSO   EquipDetail   => equipDetail;
-    public ConsumableDetailSO  ConsumDetail  => consumableDetail;
-    public EnhanceTableSO      EnhanceTable  => enhanceTable;
-
     [Header("UI 참조")]
     [SerializeField] private InventorySlot[]  slots;
     [SerializeField] private DiscardPopup     discardPopup;
@@ -112,7 +101,7 @@ public class InventoryManager : MonoBehaviour
 
         foreach (var item in serverItems)
         {
-            ItemEntry itemInfo = itemTable.GetById(item.item_id);
+            ItemEntry itemInfo = GameDataSO.Instance.ItemTable.GetById(item.item_id);
             if (itemInfo == null)
             {
                 Debug.LogWarning($"[Inventory] item_id {item.item_id} 을 ItemTableSO에서 찾을 수 없음");
@@ -241,7 +230,7 @@ public class InventoryManager : MonoBehaviour
 
         if(isSuccess)
         {
-            ItemEntry itemEntry = itemTable.GetById(itemId);
+            ItemEntry itemEntry = GameDataSO.Instance.ItemTable.GetById(itemId);
             ServerManager.Instance?.EndAddItemRpc(itemObjectId, true, $"{itemEntry.Name}(+{enhanceLevel})을(를) 획득했습니다.");
         }
         else
@@ -265,7 +254,7 @@ public class InventoryManager : MonoBehaviour
         bool isSuccess = false;
         bool inventoryFull = false;
 
-        ItemEntry itemEntry = itemTable.GetById(itemId);
+        ItemEntry itemEntry = GameDataSO.Instance.ItemTable.GetById(itemId);
 
         yield return StartCoroutine(DataAPI.AddItem(UserSession.DbUserId, itemId, quantity,
             onSuccess: _ => {
@@ -363,8 +352,8 @@ public class InventoryManager : MonoBehaviour
 
     public void SetItemCooldown(int itemId)
     {
-        if (consumableDetail == null) return;
-        ConsumableDetailEntry detail = consumableDetail.GetById(itemId);
+        if (GameDataSO.Instance.ConsumDetail == null) return;
+        ConsumableDetailEntry detail = GameDataSO.Instance.ConsumDetail.GetById(itemId);
         if (detail == null || detail.Cooltime <= 0) return;
         _itemCooldowns[itemId] = Time.time + detail.Cooltime;
     }
@@ -377,8 +366,8 @@ public class InventoryManager : MonoBehaviour
 
     public float GetCooldownDuration(int itemId)
     {
-        if (consumableDetail == null) return 0f;
-        ConsumableDetailEntry detail = consumableDetail.GetById(itemId);
+        if (GameDataSO.Instance.ConsumDetail == null) return 0f;
+        ConsumableDetailEntry detail = GameDataSO.Instance.ConsumDetail.GetById(itemId);
         return detail != null ? detail.Cooltime : 0f;
     }
 
@@ -421,13 +410,13 @@ public class InventoryManager : MonoBehaviour
 
     private EquipmentDetailEntry GetDetail(InventorySlotData data)
     {
-        if (equipDetail == null || data.ItemInfo.ItemType != "Equipment") return null;
-        return equipDetail.GetById(data.ItemInfo.ItemID);
+        if (GameDataSO.Instance.EquipDetail == null || data.ItemInfo.ItemType != "Equipment") return null;
+        return GameDataSO.Instance.EquipDetail.GetById(data.ItemInfo.ItemID);
     }
 
     private ConsumableDetailEntry GetConsumDetail(InventorySlotData data)
     {
-        if (consumableDetail == null || data.ItemInfo.ItemType != "Consumable") return null;
-        return consumableDetail.GetById(data.ItemInfo.ItemID);
+        if (GameDataSO.Instance.ConsumDetail == null || data.ItemInfo.ItemType != "Consumable") return null;
+        return GameDataSO.Instance.ConsumDetail.GetById(data.ItemInfo.ItemID);
     }
 }

@@ -12,10 +12,6 @@ using Unity.Netcode;
 /// </summary>
 public class EquipmentPanel : MonoBehaviour
 {
-    [Header("SO 참조 (Inspector에서 드래그)")]
-    public BaseStatSO    BaseStat;
-    public EnhanceTableSO EnhanceTable;
-
     [Header("스탯 텍스트")]
     [SerializeField] private TMP_Text statText;
 
@@ -36,8 +32,8 @@ public class EquipmentPanel : MonoBehaviour
 
     public EquipmentSlot SelectedSlot => _selectedSlot;
 
-    private ItemTableSO       ItemTable   => _manager.ItemTable;
-    private EquipmentDetailSO EquipDetail => _manager.EquipDetail;
+    private ItemTableSO       ItemTable   => GameDataSO.Instance.ItemTable;
+    private EquipmentDetailSO EquipDetail => GameDataSO.Instance.EquipDetail;
 
     private void Awake()
     {
@@ -373,7 +369,7 @@ public class EquipmentPanel : MonoBehaviour
                 equippedList.Add(slot.CurrentEquipped);
         }
 
-        PlayerStat stat = PlayerStat.Calculate(BaseStat, EquipDetail, equippedList, EnhanceTable);
+        PlayerStat stat = PlayerStat.Calculate(GameDataSO.Instance.BaseStat, EquipDetail, equippedList, GameDataSO.Instance.EnhanceTable, GameDataSO.Instance.ArmorEnhanceTable);
 
         if (statText != null)
             statText.text =

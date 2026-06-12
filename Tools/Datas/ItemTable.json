@@ -164,7 +164,7 @@
         "Name": "하급 검",
         "ItemType": "Equipment",
         "Grade": "Low",
-        "Sell": 48,
+        "Sell": 0,
         "Buy": 120,
         "MaxStack": 0,
         "Path": "Assets/ExternAssets/IconImage/Weapon/Sword_0.png"
@@ -204,7 +204,7 @@
         "Name": "하급 스태프",
         "ItemType": "Equipment",
         "Grade": "Low",
-        "Sell": 48,
+        "Sell": 0,
         "Buy": 120,
         "MaxStack": 0,
         "Path": "Assets/ExternAssets/IconImage/Weapon/Staff_0.png"
@@ -244,7 +244,7 @@
         "Name": "하급 활",
         "ItemType": "Equipment",
         "Grade": "Low",
-        "Sell": 48,
+        "Sell": 0,
         "Buy": 120,
         "MaxStack": 0,
         "Path": "Assets/ExternAssets/IconImage/Weapon/Bow_0.png"
@@ -378,6 +378,16 @@
         "Buy": 0,
         "MaxStack": 30,
         "Path": "Assets/ExternAssets/IconImage/Item/보석.png"
+    },
+    {
+        "ItemID": 5004,
+        "Name": "목재",
+        "ItemType": "Material",
+        "Grade": "Low",
+        "Sell": 10,
+        "Buy": 0,
+        "MaxStack": 30,
+        "Path": "Assets/ExternAssets/IconImage/Item/목재.png"
     },
     {
         "ItemID": 5010,

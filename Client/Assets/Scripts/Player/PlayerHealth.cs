@@ -2,11 +2,12 @@ using System;
 using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerHealth : NetworkBehaviour
+public class PlayerHealth : NetworkBehaviour, IHealth
 {
 	[SerializeField] private PlayerAnimSync animSync;
 	[SerializeField] private ClientManager clientManager;
 	public PlayerRuntimeStat playerRuntimeStat;
+	[SerializeField] private PlayerCombat playerCombat;
 	// [SerializeField] private int maxHp = 100;
 
 	public NetworkVariable<float> CurrentHp = new NetworkVariable<float>(
@@ -86,7 +87,7 @@ public class PlayerHealth : NetworkBehaviour
 			UserContext context = ServerManager.Instance.UserContexts[OwnerClientId];
 			if(context != null)
 			{
-				Debug.Log($"[PlayerHealth] 유저 {context.Username}(CID {OwnerClientId} / DID {context.DbUserId})의 CurrentHP: {oldHp} -> {newHp}");
+				// Debug.Log($"[PlayerHealth] 유저 {context.Username}(CID {OwnerClientId} / DID {context.DbUserId})의 CurrentHP: {oldHp} -> {newHp}");
 			}
 		}
 
@@ -165,7 +166,7 @@ public class PlayerHealth : NetworkBehaviour
 			if(!clientManager.IsInitialized.Value) return; // 초기 설정 완료 확인
 			animSync.RequestAnimationServerRpc(PlayerAnimationEnum.GetAttack);
 			// Debug.Log("���� ���ݹ���"); // 텍스트 깨짐
-			Debug.Log($"[PlayerHealth] CurrentHP: {oldHp} -> {newHp}");
+			// Debug.Log($"[PlayerHealth] CurrentHP: {oldHp} -> {newHp}");
 		}
 	}
 
@@ -175,6 +176,13 @@ public class PlayerHealth : NetworkBehaviour
 		{
 			if(!clientManager.IsInitialized.Value) return; // 초기 설정 완료 확인
 			if(clientManager.IsDead.Value) return;
+
+			if (playerCombat != null)
+			{
+				playerCombat.ForceCancelStaffChargeServerRpc();
+				playerCombat.ForceCancelArrowCharge();
+			}
+
 			ServerManager.Instance.RequestDieRpc(LastAttackerClientId.Value);
 			Debug.Log("[PlayerHealth] Dead");
 		}

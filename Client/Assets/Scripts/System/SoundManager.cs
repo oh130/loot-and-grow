@@ -96,6 +96,9 @@ public class SoundManager : MonoBehaviour
 
     public void PlayBGM(string fileName)
     {
+        #if UNITY_SERVER
+        return;
+        #endif
         if (_bgmDict.TryGetValue(fileName, out AudioClip clip))
         {
             if (bgmSource.clip == clip && bgmSource.isPlaying) return;
@@ -109,6 +112,9 @@ public class SoundManager : MonoBehaviour
 
     public void PlaySFX2D(string fileName, float factor = 1f)
     {
+        #if UNITY_SERVER
+        return;
+        #endif
         if (_sfxDict.TryGetValue(fileName, out AudioClip clip))
         {
             sfx2DSource.PlayOneShot(clip, factor * _sfxVolume * _masterVolume);
@@ -117,6 +123,9 @@ public class SoundManager : MonoBehaviour
 
     public void PlaySFX3D(string fileName, Vector3 position, float factor = 1f)
     {
+        #if UNITY_SERVER
+        return;
+        #endif
         if (_sfxDict.TryGetValue(fileName, out AudioClip clip))
         {
             GameObject go = PoolManager.Instance?.Get("AudioSource_3D");
@@ -125,6 +134,7 @@ public class SoundManager : MonoBehaviour
             go.transform.position = position;
             AudioSource source = go.GetComponent<AudioSource>();
 
+            source.enabled = true;
             source.clip = clip;
             source.spatialBlend = 1f;
             source.volume = factor * _sfxVolume * _masterVolume;

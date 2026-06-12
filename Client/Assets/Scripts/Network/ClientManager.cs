@@ -4,6 +4,7 @@ using NUnit.Framework.Constraints;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.Netcode.Components;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -26,9 +27,11 @@ public class ClientManager : NetworkBehaviour
 
     [Header("Prefabs")]
     [SerializeField] private GameObject uiUsernamePrefab;
+    [SerializeField] private NetworkObject gatherEffectPrefab;
 
     private bool _isDisconnecting = false;
     private UI_Username _uiUsername;
+    private bool _isOnceVisualActive = false;
 
     private void Update()
     {
@@ -47,6 +50,11 @@ public class ClientManager : NetworkBehaviour
 
     private void SetVisualActive(bool isActive)
     {
+        if(!_isOnceVisualActive)
+        {
+            _isOnceVisualActive = true;
+            StartCoroutine(DistanceCullingRoutine());
+        }
         if (visualRoot != null) visualRoot.SetActive(isActive);
     }
 
@@ -72,7 +80,7 @@ public class ClientManager : NetworkBehaviour
             UserName.OnValueChanged += OnUsernameChanged;
             playerHealth.CurrentHp.OnValueChanged += OnHpChanged;
 
-            SetVisualActive(IsInitialized.Value);
+            SetVisualActive(OwnerClientId != 0? IsInitialized.Value : false);
 
             minimapIndicatorArrow.SetActive(false);
 
@@ -89,6 +97,9 @@ public class ClientManager : NetworkBehaviour
         {
             GameManager.Instance.RegisterPlayerObject(gameObject);
             NetworkManager.Singleton.OnClientDisconnectCallback += OnDisconnect;
+            CurrentArea.OnValueChanged += OnAreaChanged;
+            GameManager.Instance?.OnAreaChanged(CurrentArea.Value);
+
 
             if(ServerManager.Instance)
             {
@@ -116,15 +127,18 @@ public class ClientManager : NetworkBehaviour
             playerHealth.CurrentHp.OnValueChanged -= OnHpChanged;
         }
 
-        if (!IsOwner && NetworkManager.Singleton != null)
+        if (IsOwner && NetworkManager.Singleton != null)
         {
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnDisconnect;
+            CurrentArea.OnValueChanged -= OnAreaChanged;
         }
     }
 
     private void OnDisconnect(ulong clientId)
     {
         if (_isDisconnecting) return;
+        // Logout() already handles shutdown + scene load — don't double-trigger
+        if (!UserSession.IsLoggedIn) return;
         if (clientId == NetworkManager.Singleton.LocalClientId)
         {
             _isDisconnecting = true;
@@ -141,6 +155,11 @@ public class ClientManager : NetworkBehaviour
             SetVisualActive(true);
             UpdateUIUsernameAndHealth(UserName.Value.ToString());
         }
+    }
+
+    private void OnAreaChanged(AreaType oldVal, AreaType newVal)
+    {
+        GameManager.Instance?.OnAreaChanged(newVal);
     }
 
     public double GetPlayTime()
@@ -251,5 +270,57 @@ public class ClientManager : NetworkBehaviour
     {
         animSync.RequestAnimationServerRpc(PlayerAnimationEnum.Reset);
         controller.SetMovement(true);
+    }
+
+    public void OnGatherEvent()
+	{
+		if(IsServer)
+        {
+            DoGatherEffect();
+        }
+	}
+
+    private void DoGatherEffect()
+	{
+        if(!gatherEffectPrefab) return;
+
+		Quaternion spawnRot = Quaternion.LookRotation(transform.forward);
+
+		NetworkObject effectObj = Instantiate(gatherEffectPrefab, transform.position + transform.forward * 1.5f + Vector3.up * 1.5f, spawnRot);
+		effectObj.Spawn(true);
+
+		ServerManager.Instance.StartCoroutine(DespawnEffectAfterDelay(effectObj, 2f));
+	}
+
+	private IEnumerator DespawnEffectAfterDelay(NetworkObject effectObj, float delay)
+	{
+		yield return new WaitForSeconds(delay);
+
+		if (effectObj != null && effectObj.IsSpawned)
+		{
+			effectObj.Despawn(true);
+		}
+	}
+
+    private IEnumerator DistanceCullingRoutine()
+    {
+        if(OwnerClientId == 0) yield break;
+        while (true)
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            if (GameManager.Instance.player == null) continue;
+
+            float distance = Vector3.Distance(transform.position, GameManager.Instance.player.transform.position);
+
+            if (distance > 50f)
+            {
+                SetVisualActive(false);
+            }
+            else
+            {
+                SetVisualActive(true);
+            }
+        }
     }
 }

@@ -14,11 +14,18 @@ public class RegisterManager : MonoBehaviour
     [Header("Manager Reference")]
     [SerializeField] private AuthUIManager uiManager;
 
+    public void OnBackButtonClick()
+    {
+        SoundManager.Instance?.PlaySFX2D("ItemSelect");
+        uiManager.ShowLogin();
+    }
+
     public void OnRegisterButtonClick()
     {
-        if (string.IsNullOrEmpty(idInput.text) || string.IsNullOrEmpty(pwInput.text))
+        SoundManager.Instance?.PlaySFX2D("ItemSelect");
+        if (string.IsNullOrEmpty(idInput.text) || string.IsNullOrEmpty(pwInput.text) || string.IsNullOrEmpty(nameInput.text))
         {
-            statusText.text = "please enter id and pw.";
+            statusText.text = "정보를 입력해 주세요.";
             return;
         }
         StartCoroutine(RegisterRoutine());
@@ -26,15 +33,15 @@ public class RegisterManager : MonoBehaviour
 
     IEnumerator RegisterRoutine()
     {
-        statusText.text = "requesting server...";
+        statusText.text = "처리 중...";
 
         yield return StartCoroutine(DataAPI.Register(idInput.text, pwInput.text, nameInput.text,
             onSuccess: _ =>
             {
-                statusText.text = "register success.";
+                statusText.text = "계정 생성 성공!";
                 StartCoroutine(GoToLogin());
             },
-            onError: error => statusText.text = error.Contains("400") ? "id exists already." : "server error."
+            onError: error => statusText.text = error.Contains("400") ? "이미 존재하는 아이디입니다." : "서버 오류 발생"
         ));
     }
 

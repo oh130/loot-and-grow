@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Collections;
+using System.Collections.Generic;
+using Unity.Cinemachine;
 
 public class PlayerRelativeCam : MonoBehaviour
 {
@@ -26,7 +28,14 @@ public class PlayerRelativeCam : MonoBehaviour
 	[SerializeField] private float combatCameraForwardOffset = 1.2f;
 	[SerializeField] private float combatCameraLerpSpeed = 8f;
 	[SerializeField] private float combatYawOffset = -10f;
-	
+
+
+	[Header("Camera Zoom")]
+	[SerializeField] private CinemachineCamera virtualCamera;
+	[SerializeField] private float zoomSensitivity = 0.05f;
+	[SerializeField] private float minFOV = 35f;
+	[SerializeField] private float maxFOV = 70f;
+
 	private bool isCombatCameraActive = false;
 	private Vector3 defaultCameraTargetLocalPos;
 	private Vector3 desiredCameraTargetLocalPos;
@@ -40,6 +49,11 @@ public class PlayerRelativeCam : MonoBehaviour
 
 	private void Awake()
 	{
+		if (virtualCamera == null)
+		{
+			virtualCamera = FindFirstObjectByType<CinemachineCamera>();
+		}
+
 		if (joy == null)
 		{
 			joy = FindFirstObjectByType<VariableJoystick>();
@@ -49,7 +63,7 @@ public class PlayerRelativeCam : MonoBehaviour
 	private void Start()
 	{
 		Vector3 angles = cameraTarget.eulerAngles;
-		yaw = angles.y;
+		yaw = angles.y + 90f;
 		pitch = angles.x;
 
 		defaultCameraTargetLocalPos = cameraTarget.localPosition;
@@ -58,6 +72,12 @@ public class PlayerRelativeCam : MonoBehaviour
 
 	private void Update()
 	{
+#if UNITY_EDITOR || UNITY_STANDALONE
+		HandleMouseZoom();
+#else
+		HandlePinchZoom();
+#endif
+
 		RotateCameraTarget();
 		RotatePlayerToCamera();
 	}
@@ -68,6 +88,86 @@ public class PlayerRelativeCam : MonoBehaviour
 			cameraTarget.localPosition,
 			desiredCameraTargetLocalPos,
 			Time.deltaTime * combatCameraLerpSpeed
+		);
+	}
+
+	private bool IsTouchOverBlockedArea(Touch touch)
+	{
+		if (EventSystem.current == null) return false;
+
+		if (IsPointerOverUIObject(touch.position))
+			return true;
+
+		if (joy != null)
+		{
+			RectTransform joyRect = joy.GetComponent<RectTransform>();
+
+			if (joyRect != null &&
+				RectTransformUtility.RectangleContainsScreenPoint(
+					joyRect,
+					touch.position,
+					null
+				))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private void HandlePinchZoom()
+	{
+		if (virtualCamera == null || joy == null) return;
+		if(!(joy.Horizontal <= 0.01f && joy.Horizontal >= -0.01f)) return;
+		if(!(joy.Vertical <= 0.01f && joy.Vertical >= -0.01f)) return;
+
+		List<Touch> nonUITouches = new List<Touch>();
+
+		for (int i = 0; i < Input.touchCount; i++)
+		{
+			Touch touch = Input.GetTouch(i);
+
+			if (!IsTouchOverBlockedArea(touch))
+			{
+				nonUITouches.Add(touch);
+			}
+		}
+		if (nonUITouches.Count >= 2)
+		{
+			cameraTouchFingerId = -1;
+			Touch t0 = nonUITouches[0];
+			Touch t1 = nonUITouches[1];
+
+			Vector2 prev0 = t0.position - t0.deltaPosition;
+			Vector2 prev1 = t1.position - t1.deltaPosition;
+
+			float prevDistance = Vector2.Distance(prev0, prev1);
+			float currentDistance = Vector2.Distance(t0.position, t1.position);
+
+			float delta = currentDistance - prevDistance;
+
+			virtualCamera.Lens.FieldOfView -= delta * zoomSensitivity;
+			virtualCamera.Lens.FieldOfView = Mathf.Clamp(
+				virtualCamera.Lens.FieldOfView,
+				minFOV,
+				maxFOV
+			);
+		}
+	}
+
+	private void HandleMouseZoom()
+	{
+		if (virtualCamera == null) return;
+
+		float scroll = Input.mouseScrollDelta.y;
+		if (Mathf.Abs(scroll) < 0.01f) return;
+
+		virtualCamera.Lens.FieldOfView -= scroll * 5f;
+		virtualCamera.Lens.FieldOfView = Mathf.Clamp(
+			virtualCamera.Lens.FieldOfView,
+			minFOV,
+			maxFOV
 		);
 	}
 
@@ -109,7 +209,7 @@ public class PlayerRelativeCam : MonoBehaviour
 		}
 
 		cameraTarget.rotation = Quaternion.Euler(pitch, finalYaw, 0f);
-		if(minimapIndicatorArrow.activeSelf) minimapIndicatorArrow.transform.rotation = Quaternion.Euler(0f, finalYaw, 0f);
+		if (minimapIndicatorArrow.activeSelf) minimapIndicatorArrow.transform.rotation = Quaternion.Euler(0f, finalYaw, 0f);
 	}
 
 	private void HandleMouseCameraRotation()
@@ -147,19 +247,29 @@ public class PlayerRelativeCam : MonoBehaviour
 
 	private void HandleTouchCameraRotation()
 	{
+		List<Touch> nonUITouches = new List<Touch>();
+		for (int i = 0; i < Input.touchCount; i++)
+		{
+			Touch touch = Input.GetTouch(i);
+			if (!IsTouchOverBlockedArea(touch))
+			{
+				nonUITouches.Add(touch);
+			}
+		}
+		if(nonUITouches.Count >= 2 && 
+		(joy.Horizontal <= 0.01f && joy.Horizontal >= -0.01f) &&
+		(joy.Vertical <= 0.01f && joy.Vertical >= -0.01f)
+		) return;
+
 		if (cameraTouchFingerId == -1)
 		{
 			for (int i = 0; i < Input.touchCount; i++)
 			{
 				Touch touch = Input.GetTouch(i);
-
-				if (touch.phase == TouchPhase.Began &&
+				if ((touch.phase == TouchPhase.Began || touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary) &&
 					touch.position.x > Screen.width * 0.5f)
 				{
-					if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId))
-					{
-						continue;
-					}
+					if (IsTouchOverBlockedArea(touch)) continue;
 					cameraTouchFingerId = touch.fingerId;
 					break;
 				}
@@ -168,12 +278,16 @@ public class PlayerRelativeCam : MonoBehaviour
 
 		if (cameraTouchFingerId != -1)
 		{
+			bool fingerFound = false;
+
 			for (int i = 0; i < Input.touchCount; i++)
 			{
 				Touch touch = Input.GetTouch(i);
 
 				if (touch.fingerId != cameraTouchFingerId)
 					continue;
+
+				fingerFound = true;
 
 				if (touch.phase == TouchPhase.Moved)
 				{
@@ -187,11 +301,12 @@ public class PlayerRelativeCam : MonoBehaviour
 				{
 					cameraTouchFingerId = -1;
 				}
-
 				return;
 			}
-
-			cameraTouchFingerId = -1;
+			if (!fingerFound)
+			{
+				cameraTouchFingerId = -1;
+			}
 		}
 	}
 
@@ -222,20 +337,30 @@ public class PlayerRelativeCam : MonoBehaviour
 		target.rotation = targetRotation;
 	}
 
-    public void InitializeSensitivity()
-    {
-        float multiplier = PlayerPrefs.GetFloat("Sensitivity", 1.0f);
-        mouseSensitivity = 1000f * multiplier;
-    }
+	public void InitializeSensitivity()
+	{
+		float multiplier = PlayerPrefs.GetFloat("Sensitivity", 1.0f);
+		mouseSensitivity = 1000f * multiplier;
+	}
 
-    public void SetMouseSensitivityMultiplier(float multiplier)
-    {
-        mouseSensitivity = 1000f * multiplier;
-    }
+	public void SetMouseSensitivityMultiplier(float multiplier)
+	{
+		mouseSensitivity = 1000f * multiplier;
+	}
 
 	public Vector3 GetCameraForward()
 	{
 		Vector3 forward = cameraTarget.forward;
 		return forward.normalized;
+	}
+
+	private bool IsPointerOverUIObject(Vector2 touchPosition)
+	{
+		PointerEventData eventDataCurrentPosition = new PointerEventData(EventSystem.current);
+		eventDataCurrentPosition.position = touchPosition;
+
+		List<RaycastResult> results = new List<RaycastResult>();
+		EventSystem.current.RaycastAll(eventDataCurrentPosition, results);
+		return results.Count > 0;
 	}
 }

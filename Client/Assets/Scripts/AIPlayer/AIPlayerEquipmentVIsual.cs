@@ -1,0 +1,209 @@
+using System.Collections.Generic;
+using Unity.Netcode;
+using UnityEngine;
+
+public class AIPlayerEquipmentVisual : NetworkBehaviour
+{
+	[Header("Slots")]
+	[SerializeField] private Transform headSlot;
+	[SerializeField] private Transform weaponSlot;
+	[SerializeField] private Transform bowSlot;
+
+	[Header("Skeleton (Skinned Mesh)")]
+	[SerializeField] private Transform targetSkeletonRoot;
+	[SerializeField] private Transform clothingParent;
+
+	[Header("Mapping: Hat")]
+	[SerializeField] private int[] hatItemIds;
+	[SerializeField] private GameObject[] hatPrefabs;
+
+	[Header("Mapping: Weapon")]
+	[SerializeField] private int[] weaponItemIds;
+	[SerializeField] private GameObject[] weaponPrefabs;
+
+	[Header("Mapping: Top")]
+	[SerializeField] private int[] topItemIds;
+	[SerializeField] private SkinnedMeshRenderer[] topPrefabs;
+
+	[Header("Mapping: Bottom")]
+	[SerializeField] private int[] bottomItemIds;
+	[SerializeField] private SkinnedMeshRenderer[] bottomPrefabs;
+
+	[Header("Mapping: Accessory")]
+	[SerializeField] private int[] accessoryItemIds;
+	[SerializeField] private SkinnedMeshRenderer[] accessoryPrefabs;
+
+	[Header("Reference")]
+	[SerializeField] private AIPlayer aiPlayer;
+
+	private NetworkVariable<int> currentHatId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+	private NetworkVariable<int> currentWeaponId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+	private NetworkVariable<int> currentTopId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+	private NetworkVariable<int> currentBottomId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+	private NetworkVariable<int> currentAccessoryId = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+	private GameObject spawnedHat;
+	private GameObject spawnedWeapon;
+	private SkinnedMeshRenderer spawnedTop;
+	private SkinnedMeshRenderer spawnedBottom;
+	private SkinnedMeshRenderer spawnedAccessory;
+
+	public override void OnNetworkSpawn()
+	{
+		currentHatId.OnValueChanged += (oldId, newId) => UpdateHatVisual(newId);
+		currentWeaponId.OnValueChanged += (oldId, newId) => UpdateWeaponVisual(newId);
+		currentTopId.OnValueChanged += (oldId, newId) => UpdateTopVisual(newId);
+		currentBottomId.OnValueChanged += (oldId, newId) => UpdateBottomVisual(newId);
+		currentAccessoryId.OnValueChanged += (oldId, newId) => UpdateAccessoryVisual(newId);
+
+		RefreshAllVisuals();
+	}
+
+	private void RefreshAllVisuals()
+	{
+		UpdateHatVisual(currentHatId.Value);
+		UpdateWeaponVisual(currentWeaponId.Value);
+		UpdateTopVisual(currentTopId.Value);
+		UpdateBottomVisual(currentBottomId.Value);
+		UpdateAccessoryVisual(currentAccessoryId.Value);
+	}
+
+	public void ServerEquip(int itemId)
+	{
+        string equipType = GameDataSO.Instance.EquipDetail.GetById(itemId).EquipType;
+		switch (equipType)
+		{
+			case "Helmet": currentHatId.Value = itemId; break;
+			case "Weapon": 
+                currentWeaponId.Value = itemId;
+                if (aiPlayer != null)
+                {
+                    aiPlayer.SetWeaponTypeByItemId(itemId);
+                }
+                break;
+			case "Top": currentTopId.Value = itemId; break;
+			case "Bottom": currentBottomId.Value = itemId; break;
+			case "Accessory": currentAccessoryId.Value = itemId; break;
+		}
+	}
+
+	// ������ [Visual Logic] ���� ������Ʈ ���� �� ��ġ ����������������������������������������������������������
+
+	private void UpdateHatVisual(int itemId)
+	{
+		if (spawnedHat != null) Destroy(spawnedHat);
+		if (itemId == -1) return;
+
+		int index = FindIndex(itemId, hatItemIds);
+		if (index >= 0)
+		{
+			spawnedHat = Instantiate(hatPrefabs[index], headSlot);
+			ResetTransform(spawnedHat, hatPrefabs[index]);
+		}
+	}
+
+	private void UpdateWeaponVisual(int itemId)
+	{
+		if (spawnedWeapon != null) Destroy(spawnedWeapon);
+		if (itemId == -1) return;
+
+		int index = FindIndex(itemId, weaponItemIds);
+		if (index >= 0)
+		{
+			if (itemId >= 3088) spawnedWeapon = Instantiate(weaponPrefabs[index], bowSlot);
+			else spawnedWeapon = Instantiate(weaponPrefabs[index], weaponSlot);
+			ResetTransform(spawnedWeapon, weaponPrefabs[index]);
+		}
+	}
+
+	private void UpdateTopVisual(int itemId)
+	{
+		if (spawnedTop != null) Destroy(spawnedTop.gameObject);
+		if (itemId == -1) return;
+
+		int index = FindIndex(itemId, topItemIds);
+		if (index >= 0)
+		{
+			Transform parent = clothingParent != null ? clothingParent : transform;
+			spawnedTop = Instantiate(topPrefabs[index], parent);
+			spawnedTop.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+			Rebind(spawnedTop);
+		}
+	}
+
+	private void UpdateBottomVisual(int itemId)
+	{
+		if (spawnedBottom != null) Destroy(spawnedBottom.gameObject);
+		if (itemId == -1) return;
+
+		int index = FindIndex(itemId, bottomItemIds);
+		if (index >= 0)
+		{
+			Transform parent = clothingParent != null ? clothingParent : transform;
+			spawnedBottom = Instantiate(bottomPrefabs[index], parent);
+			spawnedBottom.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+			Rebind(spawnedBottom);
+		}
+	}
+
+	private void UpdateAccessoryVisual(int itemId)
+	{
+		if (spawnedAccessory != null) Destroy(spawnedAccessory.gameObject);
+		if (itemId == -1) return;
+
+		int index = FindIndex(itemId, accessoryItemIds);
+		if (index >= 0)
+		{
+			Transform parent = clothingParent != null ? clothingParent : transform;
+			spawnedAccessory = Instantiate(accessoryPrefabs[index], parent);
+			spawnedAccessory.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+			Rebind(spawnedAccessory);
+		}
+	}
+
+	// ������ [Helpers] �����ε� �� ���� ���� ����������������������������������������������������������
+
+	private void Rebind(SkinnedMeshRenderer smr)
+	{
+		ClothingBoneData data = smr.GetComponent<ClothingBoneData>();
+		if (data == null || targetSkeletonRoot == null) return;
+
+		Dictionary<string, Transform> boneMap = new Dictionary<string, Transform>();
+		foreach (Transform bone in targetSkeletonRoot.GetComponentsInChildren<Transform>(true))
+		{
+			if (!boneMap.ContainsKey(bone.name)) boneMap.Add(bone.name, bone);
+		}
+
+		Transform[] mappedBones = new Transform[data.boneNames.Length];
+		for (int i = 0; i < data.boneNames.Length; i++)
+		{
+			if (boneMap.TryGetValue(data.boneNames[i], out Transform matched))
+				mappedBones[i] = matched;
+		}
+
+		smr.bones = mappedBones;
+
+		if (!string.IsNullOrEmpty(data.rootBoneName) && boneMap.TryGetValue(data.rootBoneName, out Transform rb))
+		{
+			smr.rootBone = rb;
+		}
+		else if (boneMap.TryGetValue("pelvis_joint", out Transform pelvis))
+		{
+			smr.rootBone = pelvis;
+		}
+		smr.updateWhenOffscreen = true;
+	}
+
+	private int FindIndex(int id, int[] idArray)
+	{
+		for (int i = 0; i < idArray.Length; i++) if (idArray[i] == id) return i;
+		return -1;
+	}
+
+	private void ResetTransform(GameObject obj, GameObject prefab)
+	{
+		obj.transform.localPosition = prefab.transform.localPosition;
+		obj.transform.localRotation = prefab.transform.localRotation;
+		obj.transform.localScale = prefab.transform.localScale;
+	}
+}

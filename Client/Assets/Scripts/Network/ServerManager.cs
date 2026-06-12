@@ -11,6 +11,7 @@ using Unity.VisualScripting;
 using System.Collections;
 using Random = UnityEngine.Random;
 using NUnit.Framework.Constraints;
+using DG.Tweening;
 
 public class ServerManager : NetworkBehaviour
 {
@@ -18,15 +19,12 @@ public class ServerManager : NetworkBehaviour
 
     public static Action<ChatData> OnChatReceived;
 
+    [SerializeField] private BotManager botMangager;
+
     [Header("Prefabs")]
     [SerializeField] private GameObject droppedItem;
     [SerializeField] private GameObject droppedGold;
-    [Header("Data SOs")]
-    [SerializeField] private BaseStatSO baseStatSO;
-    [SerializeField] private EquipmentDetailSO equipmentDetailSO;
-    [SerializeField] private ItemTableSO itemTableSO;
-    [SerializeField] private ConsumableDetailSO consumableDetailSO;
-
+    [SerializeField] private GameObject dieMarker;
     public Dictionary<ulong, UserContext> UserContexts = new Dictionary<ulong, UserContext>();
 
     private void Awake()
@@ -43,7 +41,7 @@ public class ServerManager : NetworkBehaviour
 #if UNITY_SERVER || UNITY_EDITOR_OSX || UNITY_EDITOR_WIN
     private void Start()
     {
-        if (Application.isBatchMode) 
+        if (Application.isBatchMode && !botMangager.enabled) 
         {
            StartCoroutine(StartServer());
         }
@@ -62,7 +60,7 @@ public class ServerManager : NetworkBehaviour
             },
             onError: err =>
             {
-                Debug.Log("<color=red>[ServerManager] DB 서버에 admin으로 로그인하는데 실패했습니다.</color>");
+                Debug.Log($"<color=red>[ServerManager] DB 서버에 admin으로 로그인하는데 실패했습니다. error : {err}</color>");
             }
         ));
         if(!isSuccess) yield break;
@@ -100,7 +98,7 @@ public class ServerManager : NetworkBehaviour
             SendChatBySystem($"{context.Username}님이 퇴장했습니다.");
             if(clientId != 0) StartCoroutine(UpdateUserDBData(context));
             UserContexts.Remove(clientId);
-            SendChatBySystem($"현재 접속자 수: {UserContexts.Count}명");
+            SendChatBySystem($"현재 접속자 수: {UserContexts.Count-1}명");
         }
         else
         {
@@ -152,6 +150,24 @@ public class ServerManager : NetworkBehaviour
                 Debug.Log($"[ServerManager] 유저 {userContext.Username}(DID {userContext.DbUserId})의 위치 정보를 저장하려고 했으나 실패했습니다. error : {err}");
             }
         ));
+    }
+
+    public void RespawnGatherObject(NetworkObject prefab, Vector3 position, Quaternion rotation, float delay)
+    {
+        DoAction(() =>
+        {
+            if(prefab != null)
+            {
+                NetworkObject _gatherObject = Instantiate(prefab, position, rotation);
+                _gatherObject.Spawn(true);
+            }
+            else Debug.Log("[ServerManager] 자체 재생성하려는 채집요소 프리팹 null");
+        }, delay);
+    }
+
+    public void DoAction(Action action, float waitTime)
+    {
+        DOVirtual.DelayedCall(waitTime, () => {action?.Invoke();});
     }
 
     /// <summary>
@@ -377,6 +393,13 @@ public class ServerManager : NetworkBehaviour
         PlayerPrefs.Save();
     }
 
+    [Rpc(SendTo.SpecifiedInParams)]
+    public void SendUpdateMessageToClientRpc(RpcParams rpcParams = default)
+    {
+        PlayerPrefs.SetInt("DoUpdate", 1);
+        PlayerPrefs.Save();
+    }
+
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void RequestTeleportRpc(bool isTo, ulong targetClientId, RpcParams rpcParams = default)
     {
@@ -536,7 +559,7 @@ public class ServerManager : NetworkBehaviour
         string ip = "SERVER";
 
         PlayerRuntimeStat playerRuntimeStat = clientManager.gameObject.GetComponent<PlayerRuntimeStat>();
-        PlayerStat curStat = PlayerStat.Calculate(baseStatSO, equipmentDetailSO, new List<EquippedItemResponse>());
+        PlayerStat curStat = PlayerStat.Calculate(GameDataSO.Instance.BaseStat, GameDataSO.Instance.EquipDetail, new List<EquippedItemResponse>());
         playerRuntimeStat.ApplyStat(curStat);
         Debug.Log($"[PlayerRuntimeStat] 유저 {sessionData.Username}(CID {clientId} / DID {sessionData.DbUserId})의 HP:{curStat.MaxHP} ATK:{curStat.ATK} DEF:{curStat.DEF} APS:{curStat.APS:F2} SPD:{curStat.SPD:F2} HPR:{curStat.HPR:F2} CHC:{curStat.CHC:F2}");
         PlayerHealth playerHealth = clientManager.gameObject.GetComponent<PlayerHealth>();
@@ -557,7 +580,7 @@ public class ServerManager : NetworkBehaviour
 
         Debug.Log($"[ServerManager] 유저 {context.Username}(CID {clientId} / DID {context.DbUserId}) 정보 등록 성공");
         SendChatBySystem($"{context.Username}님이 접속했습니다.");
-        SendChatBySystem($"현재 접속자 수: {UserContexts.Count}명");
+        SendChatBySystem($"현재 접속자 수: {UserContexts.Count-1}명");
 
         // clientManager.ToggleBlinderUIRpc();
         StartCoroutine(EndInitializeUser(context, Vector3.zero));
@@ -576,6 +599,14 @@ public class ServerManager : NetworkBehaviour
     {
         ulong clientId = rpcParams.Receive.SenderClientId;
         NetworkManager networkManager = NetworkManager.Singleton;
+
+        if(sessionData.AppVersion != Application.version)
+        {
+            Debug.Log($"<color=red>[ServerManager] 유저 {sessionData.Username}(CID {clientId} / DID {sessionData.DbUserId})의 정보 등록 중 앱 버전 미일치 확인!!! 해당 유저를 추방합니다.</color>");
+            SendMessageToClientRpc("게임 업데이트가 필요합니다.", RpcTarget.Single(clientId, RpcTargetUse.Temp));
+            SendUpdateMessageToClientRpc(RpcTarget.Single(clientId, RpcTargetUse.Temp));
+            networkManager.DisconnectClient(clientId);
+        }
 
         // 토큰 유효성 검증
         bool isTokenValid = false;
@@ -689,7 +720,7 @@ public class ServerManager : NetworkBehaviour
         clientManager.UserName.Value = sessionData.Username;
 
         // 유저 능력치 적용 및 체력 초기화
-        PlayerStat curStat = PlayerStat.Calculate(baseStatSO, equipmentDetailSO, response.items);
+        PlayerStat curStat = PlayerStat.Calculate(GameDataSO.Instance.BaseStat, GameDataSO.Instance.EquipDetail, response.items);
         playerRuntimeStat.ApplyStat(curStat);
         Debug.Log($"[ServerManager] 유저 {sessionData.Username}(CID {clientId} / DID {sessionData.DbUserId})의 HP:{curStat.MaxHP} ATK:{curStat.ATK} DEF:{curStat.DEF} APS:{curStat.APS:F2} SPD:{curStat.SPD:F2} HPR:{curStat.HPR:F2} CHC:{curStat.CHC:F2}");
         
@@ -698,7 +729,7 @@ public class ServerManager : NetworkBehaviour
 
         Debug.Log($"[ServerManager] 유저 {context.Username}(CID {clientId} / DID {context.DbUserId}) 정보 등록 및 위치 복원 성공");
         SendChatBySystem($"{context.Username}님이 접속했습니다.");
-        SendChatBySystem($"현재 접속자 수: {UserContexts.Count}명");
+        SendChatBySystem($"현재 접속자 수: {UserContexts.Count-1}명");
 
         // 구역 정보 갱신
         GameManager.Instance.GetAreaAtPosition(prevPos, out AreaType areaType);
@@ -709,7 +740,11 @@ public class ServerManager : NetworkBehaviour
 
     private IEnumerator EndInitializeUser(UserContext userContext, Vector3 prevPos)
     {
-        userContext.ClientManager.TeleportOwnerRpc(prevPos);
+        Vector3 targetPos = prevPos;
+        #if UNITY_SERVER
+        if(userContext.ClientId == 0) targetPos = new Vector3(225,10,-225);
+        #endif
+        userContext.ClientManager.TeleportOwnerRpc(targetPos);
         yield return new WaitForSecondsRealtime(1f);
         userContext.ClientManager.ToggleBlinderUIRpc();
         userContext.ClientManager.IsInitialized.Value = true;
@@ -932,7 +967,7 @@ public class ServerManager : NetworkBehaviour
         {
             spawnPos = targetCtx.PlayerObject.transform.position + new Vector3(Random.Range(-1f,1f), 0, Random.Range(-1f,1f));
             DroppedItem itemObject = Instantiate(droppedItem, spawnPos, Quaternion.identity).GetComponent<DroppedItem>();
-            ItemEntry itemEntry = itemTableSO.GetById(item.item_id);
+            ItemEntry itemEntry = GameDataSO.Instance.ItemTable.GetById(item.item_id);
             DroppedItemData itemData = new DroppedItemData(new ItemEntryNS(itemEntry), item.quantity, item.enhance_level);
             itemObject.GetComponent<NetworkObject>().Spawn();
             itemObject.Init(itemData);
@@ -966,6 +1001,11 @@ public class ServerManager : NetworkBehaviour
             }
         ));
         if(!isSuccess) yield break;
+
+        // 사망 위치 마커 표시
+        spawnPos = targetCtx.PlayerObject.transform.position;
+        DieMarker marker = Instantiate(dieMarker, spawnPos, Quaternion.identity).GetComponent<DieMarker>();
+        marker.GetComponent<NetworkObject>().Spawn();
     }
 
     [Rpc(SendTo.SpecifiedInParams)]
@@ -1261,7 +1301,7 @@ public class ServerManager : NetworkBehaviour
             yield break;
         }
 
-        ConsumableDetailEntry consumableDetailEntry = consumableDetailSO.GetById(itemId);
+        ConsumableDetailEntry consumableDetailEntry = GameDataSO.Instance.ConsumDetail.GetById(itemId);
         if(consumableDetailEntry.EffectType == "HP")
         {
             if(!targetCtx.ClientManager.IsDead.Value)

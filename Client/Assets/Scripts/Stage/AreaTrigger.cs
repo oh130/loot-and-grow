@@ -12,12 +12,12 @@ public class AreaInfo
     public Collider areaCollider;
 }
 
-public class AreaTrigger : NetworkBehaviour
+public class AreaTrigger : MonoBehaviour
 {
     [SerializeField] private AreaType areaType;
     private void OnTriggerEnter(Collider other)
     {
-        if(!IsServer) return;
+        if(ServerManager.Instance == null || !ServerManager.Instance.IsServer) return;
 
         ClientManager client = other.GetComponent<ClientManager>();
         if(client)
@@ -28,7 +28,7 @@ public class AreaTrigger : NetworkBehaviour
     
     private void OnTriggerExit(Collider other)
     {
-        if(!IsServer) return;
+        if(ServerManager.Instance == null || !ServerManager.Instance.IsServer) return;
 
         ClientManager client = other.GetComponent<ClientManager>();
         if(client)

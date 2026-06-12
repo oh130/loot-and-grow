@@ -16,8 +16,9 @@ public class UI_Chat : MonoBehaviour
     private List<GameObject> _currentItems = new List<GameObject>();
     private int _maxChatContent = 20;
 
+    private bool _isOnPress = false;
     private float _pressTime;
-    private float _windowTime = 0.2f;
+    private float _windowTime = 0.1f;
     private bool _isInputUIOpen = false;
     private bool _isSubmitted = false;
 
@@ -68,12 +69,18 @@ public class UI_Chat : MonoBehaviour
 
     public void OnClickPressed()
     {
+        if(_isOnPress) return;
+
         _pressTime = Time.time;
+        _isOnPress = true;
     }
 
     public void OnClickReleased()
     {
+        if(!_isOnPress) return;
+
         if(Time.time - _pressTime <= _windowTime && !_isInputUIOpen) SetInputUI(true);
+        _isOnPress = false;
     }
 
     private void SetInputUI(bool flag)

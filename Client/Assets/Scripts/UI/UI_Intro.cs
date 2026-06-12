@@ -8,13 +8,16 @@ public class UI_Intro : MonoBehaviour
     Vector3 targetPos;
 
     public TMP_Text tapText;
+    [SerializeField] SoundManager soundManager;
+    public TMP_Text versionText;
 
     bool canTouch = false;
     bool isBlinking = false;
 
     void Start()
     {
-        Time.timeScale = 1f; // ¸ØÃã ¹æÁö
+        Time.timeScale = 1f; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        soundManager.PlayBGM("Title");
 
         startPos = new Vector3(25.7f, 151f, -160f);
         targetPos = new Vector3(25.7f, 151f, -120f);
@@ -22,10 +25,12 @@ public class UI_Intro : MonoBehaviour
         transform.position = startPos;
         transform.rotation = Quaternion.Euler(50.5f, -5.8f, -0.001f);
 
-        // Ã³À½¿£ Åõ¸í
+        // Ã³ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         Color c = tapText.color;
         c.a = 0f;
         tapText.color = c;
+
+        versionText.text = "Version " + Application.version;
 
         StartCoroutine(Move());
         StartCoroutine(ShowTapText());
@@ -33,18 +38,19 @@ public class UI_Intro : MonoBehaviour
 
     void Update()
     {
-        // ÅÍÄ¡/Å¬¸¯ ½Ã ¾À ÀÌµ¿
+        // ï¿½ï¿½Ä¡/Å¬ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½Ìµï¿½
         if (canTouch && Input.GetMouseButtonDown(0))
         {
+            soundManager.PlaySFX2D("ItemSelect");
             SceneManager.LoadScene("AuthorizeScene");
         }
 
-        // ±ôºýÀÓ (ºÎµå·´°Ô)
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½Îµå·´ï¿½ï¿½)
         if (isBlinking)
         {
             Color c = tapText.color;
 
-            // sinÀ¸·Î ÀÚ¿¬½º·´°Ô ¹à¾ÆÁ³´Ù ¾îµÎ¿öÁü
+            // sinï¿½ï¿½ï¿½ï¿½ ï¿½Ú¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Î¿ï¿½ï¿½ï¿½
             c.a = 0.5f + Mathf.Sin(Time.time * 3f) * 0.5f;
 
             tapText.color = c;
@@ -57,7 +63,7 @@ public class UI_Intro : MonoBehaviour
 
         while (t < 1f)
         {
-            t += Time.deltaTime * 0.05f; // ¼Óµµ Á¶Àý
+            t += Time.deltaTime * 0.05f; // ï¿½Óµï¿½ ï¿½ï¿½ï¿½ï¿½
             transform.position = Vector3.Lerp(startPos, targetPos, t);
             yield return null;
         }
@@ -71,7 +77,7 @@ public class UI_Intro : MonoBehaviour
 
         float t = 0;
 
-        // ÆäÀÌµå ÀÎ
+        // ï¿½ï¿½ï¿½Ìµï¿½ ï¿½ï¿½
         while (t < 1f)
         {
             t += Time.deltaTime;
@@ -82,7 +88,7 @@ public class UI_Intro : MonoBehaviour
             yield return null;
         }
 
-        // ÀÌÈÄ ±ôºýÀÓ ½ÃÀÛ
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         isBlinking = true;
         canTouch = true;
     }

@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using Unity.Netcode;
 using UnityEngine;
 
-public class EnemyHealth : NetworkBehaviour
+public class EnemyHealth : NetworkBehaviour, IHealth
 {
     public NetworkVariable<float> CurrentHp = new NetworkVariable<float>(
 		0,
@@ -67,6 +67,7 @@ public class EnemyHealth : NetworkBehaviour
             OnHit(oldHp, newHp);
 		}
 		
+        enemy.UpdateHPBar(newHp);
 	}
 
 	private void Heal(float value)
@@ -92,13 +93,13 @@ public class EnemyHealth : NetworkBehaviour
 		float resultDamage = Mathf.Max(1.0f, damageInfo.damage / (1 + enemy.EnemyEntry.DEF / 10f)); // 방어력 적용
 		CurrentHp.Value = Mathf.Max(CurrentHp.Value - resultDamage, 0);
 
-        if (!ServerManager.Instance.UserContexts.ContainsKey(damageInfo.attackerClientId)) return;
+		if (IsSpawned) PlayHitSoundRPC();
+		if (IsSpawned) ShowDamageTextRpc(-resultDamage, transform.position, damageInfo.isCritical);
+
+        if (damageInfo.attackerClientId == 0 || !ServerManager.Instance.UserContexts.ContainsKey(damageInfo.attackerClientId)) return;
 		GameObject attackerObject = ServerManager.Instance.UserContexts[damageInfo.attackerClientId].PlayerObject;
 		if (attackerObject == null) return;
         enemy.SetTarget(attackerObject.transform);
-
-		PlayHitSoundRPC();
-		ShowDamageTextRpc(-resultDamage, transform.position, damageInfo.isCritical);
 	}
 
 	[Rpc(SendTo.Everyone)]
@@ -125,8 +126,6 @@ public class EnemyHealth : NetworkBehaviour
 		{
 			if (newHp > 0) enemy.ServerHandleAnimation(EnemyAnimationEnum.GetAttack);
 		}
-
-        enemy.UpdateHPBar(newHp);
 	}
 
 	private void OnDead()

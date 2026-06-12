@@ -21,9 +21,6 @@ public class ShopPanel : MonoBehaviour
     [Header("UI")]
     [SerializeField] private TMP_Text timerText;
 
-    [Header("SO 참조")]
-    [SerializeField] private ItemTableSO itemTable;
-
     private readonly List<ShopSlot> _activeSlots = new List<ShopSlot>();
     private List<ShopItemResponse>  _items        = new List<ShopItemResponse>();
     private DateTime                _nextRotationAt;
@@ -153,14 +150,14 @@ public class ShopPanel : MonoBehaviour
         _items.Sort((a, b) =>
         {
             int GradeOrder(string g) => g switch { "Low" => 0, "Mid" => 1, "High" => 2, "Top" => 3, _ => 99 };
-            ItemEntry ia = itemTable?.GetById(a.item_id);
-            ItemEntry ib = itemTable?.GetById(b.item_id);
+            ItemEntry ia = GameDataSO.Instance.ItemTable?.GetById(a.item_id);
+            ItemEntry ib = GameDataSO.Instance.ItemTable?.GetById(b.item_id);
             return GradeOrder(ia?.Grade).CompareTo(GradeOrder(ib?.Grade));
         });
 
         foreach (var item in _items)
         {
-            ItemEntry info = itemTable?.GetById(item.item_id);
+            ItemEntry info = GameDataSO.Instance.ItemTable?.GetById(item.item_id);
             if (info == null) continue;
 
             ShopSlot slot = Instantiate(shopSlotPrefab, slotsParent, false);

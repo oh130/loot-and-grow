@@ -85,8 +85,8 @@ public class QuickSlotManager : MonoBehaviour
             EquipmentDetailEntry  equipDetail  = null;
             ConsumableDetailEntry consumDetail = null;
             int itemId = slot.Data.ItemInfo.ItemID;
-            if (InventoryManager.Instance.EquipDetail  != null) equipDetail  = InventoryManager.Instance.EquipDetail.GetById(itemId);
-            if (InventoryManager.Instance.ConsumDetail != null) consumDetail = InventoryManager.Instance.ConsumDetail.GetById(itemId);
+            if (GameDataSO.Instance.EquipDetail  != null) equipDetail  = GameDataSO.Instance.EquipDetail.GetById(itemId);
+            if (GameDataSO.Instance.ConsumDetail != null) consumDetail = GameDataSO.Instance.ConsumDetail.GetById(itemId);
             panel.ShowInventoryItem(slot.Data, equipDetail, consumDetail);
         }
     }

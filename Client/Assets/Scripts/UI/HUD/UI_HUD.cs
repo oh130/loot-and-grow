@@ -126,8 +126,10 @@ public class UI_HUD : UI_CanToggle
     {
         if(!_clientManager.IsInitialized.Value) return;
 
-        hpText.text = $"{_playerHealth.CurrentHp.Value}/{newHp}";
-        hpBarFillImage.fillAmount = _playerHealth.CurrentHp.Value / newHp;
+        hpText.text = $"{_playerHealth.CurrentHp.Value:F2}/{newHp:F2}";
+        float targetFill = _playerHealth.CurrentHp.Value / newHp;
+        hpBarFillImage.DOKill();
+        hpBarFillImage.DOFillAmount(targetFill, 0.25f).SetEase(Ease.OutCubic).SetLink(gameObject, LinkBehaviour.KillOnDestroy | LinkBehaviour.KillOnDisable);
     }
 
     private void FlashHpBar()

@@ -2,6 +2,7 @@ using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class UI_Menu : MonoBehaviour
 {
@@ -58,7 +59,7 @@ public class UI_Menu : MonoBehaviour
 
         if (graphicsDropdown != null)
         {
-            graphicsDropdown.value = PlayerPrefs.GetInt("GraphicsQuality", 2);
+            graphicsDropdown.value = PlayerPrefs.GetInt("GraphicsQuality", 1);
             graphicsDropdown.onValueChanged.AddListener(OnGraphicsQualityChanged);
         }
 
@@ -75,7 +76,7 @@ public class UI_Menu : MonoBehaviour
         if (sfxSlider != null)
         {
             sfxSlider.value = sfxVol;
-            SoundManager.Instance.SetBGMVolume(sfxVol);
+            SoundManager.Instance.SetSFXVolume(sfxVol);
             sfxSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
         }
     }
@@ -239,6 +240,14 @@ public class UI_Menu : MonoBehaviour
             cam.SetMouseSensitivityMultiplier(value);
 
         PlayerPrefs.SetFloat("Sensitivity", value);
+    }
+
+    public void Logout()
+    {
+        CloseMenu();
+        UserSession.ClearSession();
+        NetworkManager.Singleton?.Shutdown();
+        SceneManager.LoadScene("AuthorizeScene");
     }
 
     public void QuitGame()

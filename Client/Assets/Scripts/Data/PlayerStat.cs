@@ -15,7 +15,8 @@ public struct PlayerStat : INetworkSerializable
         BaseStatSO baseStat,
         EquipmentDetailSO equipDetail,
         List<EquippedItemResponse> equippedItems,
-        EnhanceTableSO enhanceTable = null)
+        EnhanceTableSO enhanceTable = null,
+        ArmorEnhanceTableSO armorEnhanceTable = null)
     {
         PlayerStat stat = new()
         {
@@ -42,12 +43,27 @@ public struct PlayerStat : INetworkSerializable
             stat.SPD   += detail.SPD;
             stat.HPR   += detail.HPR;
 
-            if (enhanceTable == null || equipped.enhance_level <= 0) continue;
-            bool isWeapon = detail.WeaponType == "Sword" || detail.WeaponType == "Staff" || detail.WeaponType == "Bow";
-            if (!isWeapon) continue;
+            if (equipped.enhance_level <= 0) continue;
 
-            stat.ATK += enhanceTable.GetCumulativeATKBonus(detail.WeaponType, equipped.enhance_level);
-            stat.CHC += enhanceTable.GetCritBonus(equipped.enhance_level);
+            bool isWeapon = detail.WeaponType == "Sword" || detail.WeaponType == "Staff" || detail.WeaponType == "Bow";
+            if (isWeapon)
+            {
+                if (enhanceTable == null) continue;
+                stat.ATK += enhanceTable.GetCumulativeATKBonus(detail.WeaponType, equipped.enhance_level);
+                stat.CHC += enhanceTable.GetCritBonus(equipped.enhance_level);
+            }
+            else
+            {
+                if (armorEnhanceTable == null) continue;
+                ArmorEnhanceEntry armorEntry = armorEnhanceTable.GetBySlotAndLevel(equipped.slot_type, equipped.enhance_level);
+                if (armorEntry == null) continue;
+                stat.DEF   += armorEntry.DefAdd;
+                stat.MaxHP += armorEntry.HealthAdd;
+                stat.ATK   += armorEntry.AtkAdd;
+                stat.SPD   += armorEntry.MoveSpeedAdd;
+                stat.APS   += armorEntry.APSAdd;
+                stat.HPR   += armorEntry.HPRAdd;
+            }
         }
 
         return stat;

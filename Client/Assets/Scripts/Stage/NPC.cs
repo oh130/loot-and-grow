@@ -2,7 +2,7 @@ using NUnit.Framework;
 using Unity.Netcode;
 using UnityEngine;
 
-public enum NPCType { Normal, Shop, Upgrade, Gather}
+public enum NPCType { Normal, Shop, Upgrade, Gather, Storage, Tutorial }
 
 public class NPC : MonoBehaviour, IInteractable
 {
@@ -11,6 +11,8 @@ public class NPC : MonoBehaviour, IInteractable
     [SerializeField] private GameObject uiNpcNamePrefab;
     [SerializeField] private ShopPanel targetShopPanel;
     [SerializeField] private EnhancePanel targetEnhancePanel;
+    [SerializeField] private StoragePanel targetStoragePanel;
+    [SerializeField] private TutorialManager tutorialManager;
 
     private void Start()
     {
@@ -44,6 +46,12 @@ public class NPC : MonoBehaviour, IInteractable
                 break;
             // case NPCType.Gather:
             //     break;
+            case NPCType.Storage:
+                targetStoragePanel?.Open();
+                break;
+            case NPCType.Tutorial:
+                tutorialManager?.InteractFromNPC();
+                break;
             default:
                 ServerManager.Instance?.SendChatByUserRpc($"{npcName}과 상호작용함");
                 break;

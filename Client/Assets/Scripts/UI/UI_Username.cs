@@ -14,10 +14,12 @@ public class UI_Username : MonoBehaviour
     private Transform _targetTransform;
     [SerializeField] private Vector3 offset = new Vector3(0, 2.15f, 0);
     private Vector3 _savedOffset;
+    private Vector3 _savedScale;
 
     private void Awake()
     {
         _savedOffset = offset;
+        _savedScale = rect.localScale;
     }
 
     public void Init(Transform target, string name, bool hasHP = false, bool noText = false)
@@ -46,7 +48,7 @@ public class UI_Username : MonoBehaviour
 
     public void SetScaleAndOffset(float scaleMultiplier, Vector3 addOffset)
     {
-        rect.localScale *= scaleMultiplier;
+        rect.localScale = _savedScale * scaleMultiplier;
         offset += addOffset;
     }
 
@@ -58,7 +60,7 @@ public class UI_Username : MonoBehaviour
         hpBarText.text = $"{currentHp:F2}/{maxHp:F2}";
 
         hpBarFill.DOKill();
-        hpBarFill.DOFillAmount(ratio, 0.25f).SetEase(Ease.OutCubic).SetLink(gameObject, LinkBehaviour.KillOnDestroy | LinkBehaviour.KillOnDisable);
+        hpBarFill.DOFillAmount(ratio, 0.5f).SetEase(Ease.OutCubic).SetLink(gameObject, LinkBehaviour.KillOnDestroy | LinkBehaviour.KillOnDisable);
     }
 
     public void SetText(string name)

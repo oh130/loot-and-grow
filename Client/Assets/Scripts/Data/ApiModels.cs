@@ -14,6 +14,14 @@ public class LoginResponse
     public bool is_banned;
     public string last_login_at;
     public string token;
+    public string refresh_token;
+}
+
+// POST /auth/google 요청
+[Serializable]
+public class GoogleLoginRequest
+{
+    public string id_token;
 }
 
 // GET /auth/verify 응답 — 게임 서버가 클라이언트 토큰을 검증할 때 사용
@@ -77,6 +85,11 @@ public class EquippedItemResponse
     public string slot_type;
     public int item_id;
     public int enhance_level;
+
+    public EquippedItemResponse(int in_item_id)
+    {
+        item_id = in_item_id;
+    }
 }
 
 // JsonUtility는 최상위 배열 파싱 불가 → wrapper로 감쌈
@@ -93,6 +106,7 @@ public class EnhanceResponse
 {
     public bool success;
     public int  new_enhance_level;
+    public bool destroyed;
 }
 
 // ─── Storage ───────────────────────────────────────────────────────────────

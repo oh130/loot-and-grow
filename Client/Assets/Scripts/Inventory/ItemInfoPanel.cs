@@ -134,8 +134,8 @@ public class ItemInfoPanel : MonoBehaviour
         _shopItemInfo    = itemInfo;
         _storageItemData = null;
 
-        EquipmentDetailEntry  equipDetail  = InventoryManager.Instance?.EquipDetail?.GetById(itemInfo.ItemID);
-        ConsumableDetailEntry consumDetail = InventoryManager.Instance?.ConsumDetail?.GetById(itemInfo.ItemID);
+        EquipmentDetailEntry  equipDetail  = GameDataSO.Instance.EquipDetail?.GetById(itemInfo.ItemID);
+        ConsumableDetailEntry consumDetail = GameDataSO.Instance.ConsumDetail?.GetById(itemInfo.ItemID);
 
         if (infoText != null) infoText.text = BuildText(itemInfo, 0, equipDetail, consumDetail, showSellPrice: false);
         SetVisible(true, false, false, false, false, true, false);
@@ -173,7 +173,7 @@ public class ItemInfoPanel : MonoBehaviour
     private static string S(int v)   => v >= 0 ? $"+{v}"    : $"{v}";
     private static string S(float v) => v >= 0 ? $"+{v:F2}" : $"{v:F2}";
 
-    private string BuildText(ItemEntry item, int enhanceLevel, EquipmentDetailEntry equipDetail, ConsumableDetailEntry consumDetail, bool showSellPrice = true)
+    public static string BuildText(ItemEntry item, int enhanceLevel, EquipmentDetailEntry equipDetail, ConsumableDetailEntry consumDetail, bool showSellPrice = true, bool showPrice = true)
     {
         if (item == null) return "";
         var sb = new StringBuilder();
@@ -192,21 +192,34 @@ public class ItemInfoPanel : MonoBehaviour
             sb.AppendLine($"<color=#888888>{typeStr}</color>");
             sb.AppendLine();
 
-            EnhanceTableSO enhanceTable = InventoryManager.Instance != null ? InventoryManager.Instance.EnhanceTable : null;
+            EnhanceTableSO      enhanceTable      = GameDataSO.Instance.EnhanceTable;
+            ArmorEnhanceTableSO armorEnhanceTable = GameDataSO.Instance.ArmorEnhanceTable;
             bool isWeapon = equipDetail.WeaponType == "Sword" || equipDetail.WeaponType == "Staff" || equipDetail.WeaponType == "Bow";
 
-            if (equipDetail.HP  != 0)  sb.AppendLine($"최대 체력 <color=#ffffff>{S(equipDetail.HP):F2}</color>");
+            ArmorEnhanceEntry armorBonus = (!isWeapon && armorEnhanceTable != null && enhanceLevel > 0)
+                ? armorEnhanceTable.GetBySlotAndLevel(equipDetail.EquipType, enhanceLevel)
+                : null;
 
-            if (equipDetail.ATK != 0 || (isWeapon && enhanceTable != null && enhanceLevel > 0))
+            float bHP  = armorBonus?.HealthAdd    ?? 0f;
+            float bAtk = armorBonus?.AtkAdd       ?? 0f;
+            float bDef = armorBonus?.DefAdd       ?? 0f;
+            float bAps = armorBonus?.APSAdd       ?? 0f;
+            float bSpd = armorBonus?.MoveSpeedAdd ?? 0f;
+            float bHpr = armorBonus?.HPRAdd       ?? 0f;
+
+            if (equipDetail.HP  != 0 || bHP  != 0f) sb.AppendLine($"최대 체력 <color=#ffffff>{S(equipDetail.HP  + bHP)}</color>");
+
+            if (equipDetail.ATK != 0 || bAtk != 0f || (isWeapon && enhanceTable != null && enhanceLevel > 0))
             {
-                float totalAtk = equipDetail.ATK + (isWeapon && enhanceTable != null ? enhanceTable.GetCumulativeATKBonus(equipDetail.WeaponType, enhanceLevel) : 0f);
-                sb.AppendLine($"공격력 <color=#ffffff>{S(totalAtk):F2}</color>");
+                float totalAtk = equipDetail.ATK + bAtk
+                    + (isWeapon && enhanceTable != null ? enhanceTable.GetCumulativeATKBonus(equipDetail.WeaponType, enhanceLevel) : 0f);
+                sb.AppendLine($"공격력 <color=#ffffff>{S(totalAtk)}</color>");
             }
 
-            if (equipDetail.DEF != 0)  sb.AppendLine($"방어력 <color=#ffffff>{S(equipDetail.DEF):F2}</color>");
-            if (equipDetail.APS != 0f) sb.AppendLine($"공격 속도 <color=#ffffff>{S(equipDetail.APS):F2}</color>");
-            if (equipDetail.SPD != 0f) sb.AppendLine($"이동 속도 <color=#ffffff>{S(equipDetail.SPD):F2}</color>");
-            if (equipDetail.HPR != 0f) sb.AppendLine($"체력 재생 <color=#ffffff>{S(equipDetail.HPR):F2}</color>");
+            if (equipDetail.DEF != 0 || bDef != 0f) sb.AppendLine($"방어력 <color=#ffffff>{S(equipDetail.DEF + bDef)}</color>");
+            if (equipDetail.APS != 0f || bAps != 0f) sb.AppendLine($"공격 속도 <color=#ffffff>{S(equipDetail.APS + bAps)}</color>");
+            if (equipDetail.SPD != 0f || bSpd != 0f) sb.AppendLine($"이동 속도 <color=#ffffff>{S(equipDetail.SPD + bSpd)}</color>");
+            if (equipDetail.HPR != 0f || bHpr != 0f) sb.AppendLine($"체력 재생 <color=#ffffff>{S(equipDetail.HPR + bHpr)}</color>");
 
             if (isWeapon && enhanceTable != null && enhanceLevel > 0)
             {
@@ -228,11 +241,14 @@ public class ItemInfoPanel : MonoBehaviour
                 sb.AppendLine($"쿨타임: <color=#ffffff>{consumDetail.Cooltime:F1}초</color>");
         }
 
-        sb.AppendLine();
-        if (showSellPrice)
-            sb.AppendLine($"판매가: <color=#aaaaaa>{item.Sell:N0} G</color>");
-        else
-            sb.AppendLine($"구매가: <color=#ffd700>{item.Buy:N0} G</color>");
+        if (showPrice)
+        {
+            sb.AppendLine();
+            if (showSellPrice)
+                sb.AppendLine($"판매가: <color=#aaaaaa>{item.Sell:N0} G</color>");
+            else
+                sb.AppendLine($"구매가: <color=#ffd700>{item.Buy:N0} G</color>");
+        }
         return sb.ToString().TrimEnd();
     }
 

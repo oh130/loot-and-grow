@@ -6,6 +6,7 @@ using UnityEngine;
 public class SwordSkill : NetworkBehaviour
 {
 	[SerializeField] private bool isEnemyAttack = false;
+	[SerializeField] private bool isAIPlayerAttack = false;
     [SerializeField] private ParticleSystem particle;
 	private float lifeTime = 3f;
 
@@ -46,15 +47,59 @@ public class SwordSkill : NetworkBehaviour
 	{
 		if (!IsServer || !initialized) return;
 
-		if(!isEnemyAttack)
+		if(isEnemyAttack)
 		{
 			if (!other.TryGetComponent(out NetworkObject targetNetObj)) return;
 
-			PlayerHealth pHealth = other.GetComponent<PlayerHealth>();
-			EnemyHealth eHealth = other.GetComponent<EnemyHealth>();
+			IHealth targetHealth = other.GetComponent<IHealth>();
+			EnemyHealth targetEnemy = other.GetComponent<EnemyHealth>();
 
-			if (pHealth == null && eHealth == null) return;
-			if (pHealth != null && pHealth.OwnerClientId == attackerClientId) return;
+			if (targetHealth == null || targetEnemy != null) return; // 에너미끼리는 안 때리도록 검사
+
+			if (_savedTarget.Contains(targetNetObj.NetworkObjectId)) return;
+			_savedTarget.Add(targetNetObj.NetworkObjectId);
+
+			DamageInfo damageInfo = new DamageInfo()
+			{
+				damage = damage,
+				attackerClientId = 0,
+				knockbackDir = direction,
+				knockbackPower = 0f
+			};
+
+			targetHealth?.TakeDamage(damageInfo);
+		}
+		else if(isAIPlayerAttack)
+		{
+			if (!other.TryGetComponent(out NetworkObject targetNetObj)) return;
+
+			IHealth targetHealth = other.GetComponent<IHealth>();
+			AIPlayerHealth targetAIPlayer = other.GetComponent<AIPlayerHealth>();
+			if(targetHealth == null) return;
+			if(targetAIPlayer != null && targetAIPlayer.NetworkObjectId == attackerClientId) return;
+
+			if (_savedTarget.Contains(targetNetObj.NetworkObjectId)) return;
+			_savedTarget.Add(targetNetObj.NetworkObjectId);
+
+			DamageInfo damageInfo = new DamageInfo()
+			{
+				damage = damage,
+				attackerClientId = 0,
+				knockbackDir = direction,
+				knockbackPower = 0f
+			};
+
+			targetHealth?.TakeDamage(damageInfo);
+		}
+        else
+		{
+			if (!other.TryGetComponent(out NetworkObject targetNetObj)) return;
+
+			IHealth targetHealth = other.GetComponent<IHealth>();
+			PlayerHealth targetPlayer = other.GetComponent<PlayerHealth>();
+
+			if (targetHealth == null) return;
+			if (targetPlayer != null && targetPlayer.OwnerClientId == attackerClientId) return;
 
 			if (_savedTarget.Contains(targetNetObj.NetworkObjectId)) return;
 			_savedTarget.Add(targetNetObj.NetworkObjectId);
@@ -74,31 +119,9 @@ public class SwordSkill : NetworkBehaviour
 				damageInfo.isCritical = true;
 			}
 
-			if (pHealth != null) pHealth.TakeDamage(damageInfo);
-			else if (eHealth != null) eHealth.TakeDamage(damageInfo);
+			targetHealth?.TakeDamage(damageInfo);
 			// if (NetworkObject != null && NetworkObject.IsSpawned)
 			// 	NetworkObject.Despawn();
-		}
-        else
-		{
-			if (!other.TryGetComponent(out NetworkObject targetNetObj)) return;
-
-			PlayerHealth pHealth = other.GetComponent<PlayerHealth>();
-
-			if (pHealth == null) return;
-
-			if (_savedTarget.Contains(targetNetObj.NetworkObjectId)) return;
-			_savedTarget.Add(targetNetObj.NetworkObjectId);
-
-			DamageInfo damageInfo = new DamageInfo()
-			{
-				damage = damage,
-				attackerClientId = attackerClientId,
-				knockbackDir = direction,
-				knockbackPower = 0f
-			};
-
-			if (pHealth != null) pHealth.TakeDamage(damageInfo);
 		}
 	}
 }

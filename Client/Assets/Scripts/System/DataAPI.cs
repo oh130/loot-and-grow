@@ -31,61 +31,120 @@ public static class DataAPI
         return req.error;
     }
 
-    private static IEnumerator Get(string endpoint, Action<string> onSuccess, Action<string> onError)
+    private static IEnumerator Get(string endpoint, Action<string> onSuccess, Action<string> onError, bool allowRefresh = true)
     {
-        using UnityWebRequest req = UnityWebRequest.Get(BASE_URL + endpoint);
-        SetAuthHeader(req);
-        yield return req.SendWebRequest();
-
-        if (req.result == UnityWebRequest.Result.Success)
-            onSuccess?.Invoke(req.downloadHandler.text);
-        else
-            onError?.Invoke(ExtractErrorMessage(req));
+        long code = 0; string ok = null; string err = null;
+        using (var req = UnityWebRequest.Get(BASE_URL + endpoint))
+        {
+            SetAuthHeader(req);
+            yield return req.SendWebRequest();
+            code = req.responseCode;
+            if (req.result == UnityWebRequest.Result.Success) ok  = req.downloadHandler.text;
+            else                                               err = ExtractErrorMessage(req);
+        }
+        if (code == 401 && allowRefresh) { yield return HandleRefresh(endpoint, null, "GET", onSuccess, onError); yield break; }
+        if (ok != null) onSuccess?.Invoke(ok); else onError?.Invoke(err);
     }
 
-    private static IEnumerator Post(string endpoint, string bodyJson, Action<string> onSuccess, Action<string> onError)
+    private static IEnumerator Post(string endpoint, string bodyJson, Action<string> onSuccess, Action<string> onError, bool allowRefresh = true)
     {
-        using UnityWebRequest req = new UnityWebRequest(BASE_URL + endpoint, "POST");
-        req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(bodyJson));
-        req.downloadHandler = new DownloadHandlerBuffer();
-        req.SetRequestHeader("Content-Type", "application/json");
-        SetAuthHeader(req);
-        yield return req.SendWebRequest();
-
-        if (req.result == UnityWebRequest.Result.Success)
-            onSuccess?.Invoke(req.downloadHandler.text);
-        else
-            onError?.Invoke(ExtractErrorMessage(req));
+        long code = 0; string ok = null; string err = null;
+        using (var req = new UnityWebRequest(BASE_URL + endpoint, "POST"))
+        {
+            req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(bodyJson));
+            req.downloadHandler = new DownloadHandlerBuffer();
+            req.SetRequestHeader("Content-Type", "application/json");
+            SetAuthHeader(req);
+            yield return req.SendWebRequest();
+            code = req.responseCode;
+            if (req.result == UnityWebRequest.Result.Success) ok  = req.downloadHandler.text;
+            else                                               err = ExtractErrorMessage(req);
+        }
+        if (code == 401 && allowRefresh) { yield return HandleRefresh(endpoint, bodyJson, "POST", onSuccess, onError); yield break; }
+        if (ok != null) onSuccess?.Invoke(ok); else onError?.Invoke(err);
     }
 
-    private static IEnumerator Put(string endpoint, string bodyJson, Action<string> onSuccess, Action<string> onError)
+    private static IEnumerator Put(string endpoint, string bodyJson, Action<string> onSuccess, Action<string> onError, bool allowRefresh = true)
     {
-        using UnityWebRequest req = new UnityWebRequest(BASE_URL + endpoint, "PUT");
-        req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(bodyJson));
-        req.downloadHandler = new DownloadHandlerBuffer();
-        req.SetRequestHeader("Content-Type", "application/json");
-        SetAuthHeader(req);
-        yield return req.SendWebRequest();
-
-        if (req.result == UnityWebRequest.Result.Success)
-            onSuccess?.Invoke(req.downloadHandler.text);
-        else
-            onError?.Invoke(ExtractErrorMessage(req));
+        long code = 0; string ok = null; string err = null;
+        using (var req = new UnityWebRequest(BASE_URL + endpoint, "PUT"))
+        {
+            req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(bodyJson));
+            req.downloadHandler = new DownloadHandlerBuffer();
+            req.SetRequestHeader("Content-Type", "application/json");
+            SetAuthHeader(req);
+            yield return req.SendWebRequest();
+            code = req.responseCode;
+            if (req.result == UnityWebRequest.Result.Success) ok  = req.downloadHandler.text;
+            else                                               err = ExtractErrorMessage(req);
+        }
+        if (code == 401 && allowRefresh) { yield return HandleRefresh(endpoint, bodyJson, "PUT", onSuccess, onError); yield break; }
+        if (ok != null) onSuccess?.Invoke(ok); else onError?.Invoke(err);
     }
 
-    private static IEnumerator Delete(string endpoint, string bodyJson, Action<string> onSuccess, Action<string> onError)
+    private static IEnumerator Delete(string endpoint, string bodyJson, Action<string> onSuccess, Action<string> onError, bool allowRefresh = true)
     {
-        using UnityWebRequest req = new UnityWebRequest(BASE_URL + endpoint, "DELETE");
-        req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(bodyJson));
-        req.downloadHandler = new DownloadHandlerBuffer();
-        req.SetRequestHeader("Content-Type", "application/json");
-        SetAuthHeader(req);
-        yield return req.SendWebRequest();
+        long code = 0; string ok = null; string err = null;
+        using (var req = new UnityWebRequest(BASE_URL + endpoint, "DELETE"))
+        {
+            req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(bodyJson));
+            req.downloadHandler = new DownloadHandlerBuffer();
+            req.SetRequestHeader("Content-Type", "application/json");
+            SetAuthHeader(req);
+            yield return req.SendWebRequest();
+            code = req.responseCode;
+            if (req.result == UnityWebRequest.Result.Success) ok  = req.downloadHandler.text;
+            else                                               err = ExtractErrorMessage(req);
+        }
+        if (code == 401 && allowRefresh) { yield return HandleRefresh(endpoint, bodyJson, "DELETE", onSuccess, onError); yield break; }
+        if (ok != null) onSuccess?.Invoke(ok); else onError?.Invoke(err);
+    }
 
-        if (req.result == UnityWebRequest.Result.Success)
-            onSuccess?.Invoke(req.downloadHandler.text);
-        else
-            onError?.Invoke(ExtractErrorMessage(req));
+    // 401 발생 시 Refresh Token으로 Access Token 재발급 후 원래 요청 재시도
+    private static IEnumerator HandleRefresh(string endpoint, string bodyJson, string method, Action<string> onSuccess, Action<string> onError)
+    {
+        bool refreshed = false;
+        yield return RefreshAccessToken(ok => refreshed = ok);
+        if (!refreshed)
+        {
+            UserSession.ClearSession();
+            onError?.Invoke("세션이 만료됐습니다. 다시 로그인해주세요.");
+            yield break;
+        }
+        // 재시도 (allowRefresh=false → 무한루프 방지)
+        switch (method)
+        {
+            case "GET":    yield return Get   (endpoint,           onSuccess, onError, false); break;
+            case "POST":   yield return Post  (endpoint, bodyJson, onSuccess, onError, false); break;
+            case "PUT":    yield return Put   (endpoint, bodyJson, onSuccess, onError, false); break;
+            case "DELETE": yield return Delete(endpoint, bodyJson, onSuccess, onError, false); break;
+        }
+    }
+
+    // Refresh Token → 새 Access Token 발급
+    private static IEnumerator RefreshAccessToken(Action<bool> onDone)
+    {
+        if (string.IsNullOrEmpty(UserSession.RefreshToken)) { onDone?.Invoke(false); yield break; }
+
+        string body = JsonUtility.ToJson(new RefreshData { refresh_token = UserSession.RefreshToken });
+        string result = null;
+        using (var req = new UnityWebRequest(BASE_URL + "/auth/refresh", "POST"))
+        {
+            req.uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body));
+            req.downloadHandler = new DownloadHandlerBuffer();
+            req.SetRequestHeader("Content-Type", "application/json");
+            yield return req.SendWebRequest();
+            if (req.result == UnityWebRequest.Result.Success) result = req.downloadHandler.text;
+        }
+        if (result != null)
+        {
+            var res = JsonUtility.FromJson<LoginResponse>(result);
+            UserSession.Token        = res.token;
+            UserSession.RefreshToken = res.refresh_token;
+            UserSession.SaveToPrefs();
+            onDone?.Invoke(true);
+        }
+        else onDone?.Invoke(false);
     }
 
     // ─── 제네릭 헬퍼 — 호출부에서 FromJson 안 써도 되게 ──────────────────────
@@ -126,6 +185,27 @@ public static class DataAPI
     {
         string body = JsonUtility.ToJson(new LoginData { login_id = loginId, password = password });
         yield return Post<LoginResponse>("/auth/login", body, onSuccess, onError);
+    }
+
+    /// <summary>
+    /// Google Sign-In SDK에서 받은 ID Token을 서버에 전달해 로그인(또는 자동 가입) 처리.
+    /// 서버가 Google tokeninfo 엔드포인트로 토큰을 검증하고 우리 JWT를 발급해 반환한다.
+    /// </summary>
+    public static IEnumerator GoogleLogin(string idToken, Action<LoginResponse> onSuccess, Action<string> onError = null)
+    {
+        string body = JsonUtility.ToJson(new GoogleLoginRequest { id_token = idToken });
+        yield return Post<LoginResponse>("/auth/google", body, onSuccess, onError);
+    }
+
+    /// <summary>
+    /// 저장된 Refresh Token으로 자동 로그인. 앱 시작 시 LoginManager에서 호출.
+    /// 성공 시 새 Access Token + Refresh Token이 발급되고 UserSession.Apply()로 세션 복원.
+    /// 실패(만료/무효) 시 onError 호출 — 로그인 화면 표시 필요.
+    /// </summary>
+    public static IEnumerator RefreshLogin(string refreshToken, Action<LoginResponse> onSuccess, Action<string> onError = null)
+    {
+        string body = JsonUtility.ToJson(new RefreshData { refresh_token = refreshToken });
+        yield return Post<LoginResponse>("/auth/refresh", body, onSuccess, onError);
     }
 
     /// <summary>
@@ -470,20 +550,36 @@ public static class DataAPI
     ///     onError: err => Debug.LogError(err)
     /// ));
     /// </example>
-    public static IEnumerator EnhanceWeapon(int userId, int inventoryId, int stoneInventoryId, int successRate, int reqStone, Action<EnhanceResponse> onSuccess = null, Action<string> onError = null)
+    public static IEnumerator EnhanceWeapon(int userId, int inventoryId, int stoneItemId, int successRate, int reqStone, int destroyRate, Action<EnhanceResponse> onSuccess = null, Action<string> onError = null)
     {
         string body = JsonUtility.ToJson(new EnhanceData
         {
-            user_id             = userId,
-            inventory_id        = inventoryId,
-            stone_inventory_id  = stoneInventoryId,
-            success_rate        = successRate,
-            req_stone           = reqStone,
+            user_id       = userId,
+            inventory_id  = inventoryId,
+            stone_item_id = stoneItemId,
+            success_rate  = successRate,
+            req_stone     = reqStone,
+            destroy_rate  = destroyRate,
         });
         yield return Post<EnhanceResponse>("/enhance/weapon", body, onSuccess, onError);
     }
 
-    [Serializable] private class EnhanceData { public int user_id; public int inventory_id; public int stone_inventory_id; public int success_rate; public int req_stone; }
+    public static IEnumerator EnhanceArmor(int userId, int inventoryId, int stoneItemId, int successRate, int reqStone, int destroyRate, Action<EnhanceResponse> onSuccess = null, Action<string> onError = null)
+    {
+        string body = JsonUtility.ToJson(new EnhanceData
+        {
+            user_id       = userId,
+            inventory_id  = inventoryId,
+            stone_item_id = stoneItemId,
+            success_rate  = successRate,
+            req_stone     = reqStone,
+            destroy_rate  = destroyRate,
+        });
+        yield return Post<EnhanceResponse>("/enhance/armor", body, onSuccess, onError);
+    }
+
+    [Serializable] private class EnhanceData  { public int user_id; public int inventory_id; public int stone_item_id; public int success_rate; public int req_stone; public int destroy_rate; }
+    [Serializable] private class RefreshData  { public string refresh_token; }
 
     // ─── Shop ──────────────────────────────────────────────────────────────
 

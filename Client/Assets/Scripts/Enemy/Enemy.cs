@@ -27,14 +27,13 @@ public class Enemy : NetworkBehaviour
 	private float hardRange = 6.0f;
 	private float swordRange = 2.5f;
 	private float swordAngle = 60f;
+    private float swordHitRadius = 1.0f;
+	private float swordCloseHitRange = 1.3f;
     private float staffRange = 6.0f;
     private float arrowRange = 10.0f;
 
 
     [Header("데이터 관련")]
-    [SerializeField] private EnemyTableSO enemyTableSO;
-    [SerializeField] private LootTableSO lootTableSO;
-    [SerializeField] private ItemTableSO itemTableSO;
     [SerializeField] private GameObject droppedItem;
     public EnemyEntry EnemyEntry {get; private set;}
     [SerializeField] private int enemyID = 1000;
@@ -47,12 +46,15 @@ public class Enemy : NetworkBehaviour
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private Animator anim;
     [SerializeField] private Collider coll;
+    [SerializeField] private GameObject targetFindArea;
+    [SerializeField] private GameObject visualRoot;
 
     [Header("프리팹")]
     [SerializeField] private GameObject uiNamePrefab;
     [SerializeField] private NetworkObject swordSkillPrefab;
     [SerializeField] private NetworkObject arrowProjectilePrefab;
     [SerializeField] private NetworkObject magicProjectilePrefab;
+    [SerializeField] private NetworkObject spawnEffectPrefab;
 
     public bool IsInitialized {get; private set;} = false;
     public bool IsDead {get; private set;} = false;
@@ -265,21 +267,27 @@ public class Enemy : NetworkBehaviour
     // 네트워크 관련 -----------------------------------------
     public override void OnNetworkSpawn()
 	{
-        EnemyEntry = enemyTableSO.GetById(enemyID);
+        EnemyEntry = GameDataSO.Instance.EnemyTable.GetById(enemyID);
 		if(IsServer)
         {
             _spawnPosition = transform.position;
+
+            targetFindArea.SetActive(true);
 
             enemyHealth.Init();
 
             agent.enabled = true;
             agent.updatePosition = false;
             agent.updateRotation = false;
+
+            DoSpawnEffect();
         }
         else
         {
             agent.enabled = false;
         }
+
+        StartCoroutine(DistanceCullingRoutine());
 
         SoundManager.Instance.PlaySFX3D("EnemySpawn", transform.position, 0.6f);
 
@@ -294,11 +302,32 @@ public class Enemy : NetworkBehaviour
 
         IsInitialized = true;
 	}
+
+	private void DoSpawnEffect()
+	{
+		Quaternion spawnRot = Quaternion.LookRotation(transform.forward);
+
+		NetworkObject effectObj = Instantiate(spawnEffectPrefab, transform.position, spawnRot);
+		effectObj.Spawn(true);
+
+		ServerManager.Instance.StartCoroutine(DespawnEffectAfterDelay(effectObj, 2f));
+	}
+
+	private IEnumerator DespawnEffectAfterDelay(NetworkObject effectObj, float delay)
+	{
+		yield return new WaitForSeconds(delay);
+
+		if (effectObj != null && effectObj.IsSpawned)
+		{
+			effectObj.Despawn(true);
+		}
+	}
     // ------------------------------------------------
 
     // 체력 / 사망 처리 ------------------------------------------
     public void UpdateHPBar(float newVal)
     {
+        if (_uiUsername == null) return;
         _uiUsername.SetHealth(newVal, EnemyEntry.HP);
     }
 
@@ -309,7 +338,7 @@ public class Enemy : NetworkBehaviour
         {
             agent.enabled = false;
 
-            List<LootEntry> lootEntry = lootTableSO.GetByLootId(EnemyEntry.LootID);
+            List<LootEntry> lootEntry = GameDataSO.Instance.LootTable.GetByLootId(EnemyEntry.LootID);
             
             foreach(var entry in lootEntry)
             {
@@ -319,7 +348,7 @@ public class Enemy : NetworkBehaviour
                     DroppedItem itemObject = Instantiate(droppedItem, spawnPos, Quaternion.identity).GetComponent<DroppedItem>();
                     int quantity = Random.Range(entry.MinQty, entry.MaxQty);
 
-                    ItemEntry itemEntry = itemTableSO.GetById(entry.ItemID);
+                    ItemEntry itemEntry = GameDataSO.Instance.ItemTable.GetById(entry.ItemID);
 
                     DroppedItemData itemData = new DroppedItemData(new ItemEntryNS(itemEntry), quantity, 0);
                     itemObject.GetComponent<NetworkObject>().Spawn();
@@ -333,7 +362,7 @@ public class Enemy : NetworkBehaviour
             }
 
             ServerHandleAnimation(EnemyAnimationEnum.Death);
-            int layersToExclude = LayerMask.GetMask("Player", "StageObject", "Enemy");
+            int layersToExclude = LayerMask.GetMask("Player", "StageObject", "Enemy", "AIPlayer");
             coll.excludeLayers = layersToExclude;
             controller.excludeLayers = layersToExclude;
 
@@ -347,6 +376,32 @@ public class Enemy : NetworkBehaviour
             });
         }
     }
+
+    private void SetVisualActive(bool isActive)
+    {
+        if (visualRoot != null) visualRoot.SetActive(isActive);
+    }
+
+    private IEnumerator DistanceCullingRoutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            if (GameManager.Instance.player == null) continue;
+
+            float distance = Vector3.Distance(transform.position, GameManager.Instance.player.transform.position);
+
+            if (distance > 50f)
+            {
+                SetVisualActive(false);
+            }
+            else
+            {
+                SetVisualActive(true);
+            }
+        }
+    }
     // ---------------------------------------------------
 
     // 추격/공격 대상 설정 -----------------------------------
@@ -355,7 +410,7 @@ public class Enemy : NetworkBehaviour
         if(_target == null && !_isReturning)
         {
             _target = inTransform;
-            PlaySetTargetSoundRPC();
+            // PlaySetTargetSoundRPC();
         }
     }
 
@@ -364,22 +419,16 @@ public class Enemy : NetworkBehaviour
         if(!IsServer) return;
         if(_target != null || _isReturning) return;
 
-        if(other.CompareTag("Player"))
-        {
-            _target = other.transform;
-            PlaySetTargetSoundRPC();
-        }
+        _target = other.transform;
+        // PlaySetTargetSoundRPC();
     }
 
     public void OnTriggerExitInTargetFindArea(Collider other)
     {
         if(!IsServer) return;
 
-        if(other.CompareTag("Player"))
-        {
-            if(_target == other.transform)
-                _target = null;
-        }
+        if(_target == other.transform)
+            _target = null;
     }
 
     [Rpc(SendTo.Everyone)]
@@ -400,6 +449,14 @@ public class Enemy : NetworkBehaviour
         if(_target.TryGetComponent<ClientManager>(out ClientManager clientManager))
         {
             if(clientManager.IsDead.Value)
+            {
+                _target = null;
+                return;
+            }
+        }
+        else if(_target.TryGetComponent<AIPlayer>(out AIPlayer aiPlayer))
+        {
+            if(aiPlayer.IsDead)
             {
                 _target = null;
                 return;
@@ -492,31 +549,54 @@ public class Enemy : NetworkBehaviour
 		Vector3 origin = attackerTransform.position;
 		Vector3 forward = attackerTransform.forward;
 
-		PlayerHealth bestTarget = null;
-		float bestDistance = float.MaxValue;
+		IHealth bestTarget = null;
+		float bestScore = float.MaxValue;
 
-		foreach (var userCtx in ServerManager.Instance.UserContexts)
+		int targetLayer = LayerMask.GetMask("Player", "AIPlayer");
+
+		Vector3 capsuleStart = origin + Vector3.up * 0.5f;
+		Vector3 capsuleEnd =
+			origin +
+			forward * swordRange +
+			Vector3.up * 0.5f;
+
+		Collider[] hitColliders = Physics.OverlapCapsule(
+			capsuleStart,
+			capsuleEnd,
+			swordHitRadius,
+			targetLayer
+		);
+
+		foreach (var hit in hitColliders)
 		{
-			GameObject targetObject = userCtx.Value.PlayerObject;
-			if (!userCtx.Value.ClientManager.IsInitialized.Value) continue;
+			if (hit.gameObject == attackerObject) continue;
 
-			Vector3 targetPos = targetObject.transform.position;
+			IHealth health = hit.GetComponent<IHealth>();
+
+			if (health == null) continue;
+
+			Vector3 targetPos = hit.ClosestPoint(origin);
 			Vector3 toTarget = targetPos - origin;
 
 			float distance = toTarget.magnitude;
-			if (distance > attackRange)
-				continue;
+			if (distance > swordRange + swordHitRadius) continue;
 
-			Vector3 dirToTarget = toTarget.normalized;
-			float angle = Vector3.Angle(forward, dirToTarget);
+			Vector3 flatForward = Vector3.ProjectOnPlane(forward, Vector3.up).normalized;
+			Vector3 flatToTarget = Vector3.ProjectOnPlane(toTarget, Vector3.up).normalized;
 
-			if (angle > attackAngle * 0.5f)
-				continue;
+			float angle = Vector3.Angle(flatForward, flatToTarget);
 
-			if (distance < bestDistance)
+			bool isCloseEnough = distance <= swordCloseHitRange;
+			bool isInFrontArc = angle <= swordAngle * 0.5f;
+
+			if (!isCloseEnough && !isInFrontArc) continue;
+
+			float score = distance + angle * 0.02f;
+
+			if (score < bestScore)
 			{
-				bestDistance = distance;
-				bestTarget = targetObject.GetComponent<PlayerHealth>();
+				bestScore = score;
+				bestTarget = health;
 			}
 		}
 

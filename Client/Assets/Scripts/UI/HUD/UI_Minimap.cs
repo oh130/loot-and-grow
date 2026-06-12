@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class UI_Minimap : MonoBehaviour
 {
-    [SerializeField] private UI_CanToggle uiWorldmap;
+    [SerializeField] private UI_Worldmap uiWorldmap;
 
     public void OnClick()
     {

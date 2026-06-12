@@ -1,3 +1,4 @@
+using System.Collections;
 using DG.Tweening;
 using Unity.Collections;
 using Unity.Netcode;
@@ -9,9 +10,6 @@ public class DroppedItem : NetworkBehaviour
     public NetworkVariable<bool> IsInitialized = new NetworkVariable<bool>(false);
     public NetworkVariable<FixedString64Bytes> ItemName = new NetworkVariable<FixedString64Bytes>("");
     public NetworkVariable<int> ItemID = new NetworkVariable<int>(3000);
-
-    [Header("Datas")]
-    [SerializeField] private ItemTableSO itemTableSO;
 
     [Header("Components")]
     [SerializeField] private GameObject visualRoot;
@@ -66,16 +64,38 @@ public class DroppedItem : NetworkBehaviour
         if(visualRoot != null) visualRoot.SetActive(isActive);
     }
 
+    private IEnumerator DistanceCullingRoutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            if (GameManager.Instance.player == null) continue;
+
+            float distance = Vector3.Distance(transform.position, GameManager.Instance.player.transform.position);
+
+            if (distance > 50f)
+            {
+                SetVisualActive(false);
+            }
+            else
+            {
+                SetVisualActive(true);
+            }
+        }
+    }
+
     public override void OnNetworkSpawn()
     {
         IsInitialized.OnValueChanged += OnInitializedChanged;
         ItemName.OnValueChanged += OnItemNameChanged;
         ItemID.OnValueChanged += OnItemIDChanged;
         SetVisualActive(IsInitialized.Value);
+        // StartCoroutine(DistanceCullingRoutine());
 
         if(IsInitialized.Value)
         {
-            var entry = itemTableSO.GetById(ItemID.Value);
+            var entry = GameDataSO.Instance.ItemTable.GetById(ItemID.Value);
             if (entry != null) sprite.sprite = entry.Icon;
 
             if(!string.IsNullOrEmpty(ItemName.Value.ToString()))
@@ -96,7 +116,7 @@ public class DroppedItem : NetworkBehaviour
     {
         if (newVal == true)
         {
-            sprite.sprite = itemTableSO.GetById(ItemID.Value).Icon;
+            sprite.sprite = GameDataSO.Instance.ItemTable.GetById(ItemID.Value).Icon;
             SetVisualActive(true);
             UpdateUIItemName(ItemName.Value.ToString());
         }
@@ -111,7 +131,7 @@ public class DroppedItem : NetworkBehaviour
     private void OnItemIDChanged(int oldVal, int newVal)
     {
         if(!IsInitialized.Value) return;
-        sprite.sprite = itemTableSO.GetById(newVal).Icon;
+        sprite.sprite = GameDataSO.Instance.ItemTable.GetById(newVal).Icon;
     }
     
     private void UpdateUIItemName(string name)

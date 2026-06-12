@@ -1,3 +1,4 @@
+using System.Collections;
 using DG.Tweening;
 using Unity.Collections;
 using Unity.Netcode;
@@ -60,11 +61,33 @@ public class DroppedGold : NetworkBehaviour
         if(visualRoot != null) visualRoot.SetActive(isActive);
     }
 
+    private IEnumerator DistanceCullingRoutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            if (GameManager.Instance.player == null) continue;
+
+            float distance = Vector3.Distance(transform.position, GameManager.Instance.player.transform.position);
+
+            if (distance > 50f)
+            {
+                SetVisualActive(false);
+            }
+            else
+            {
+                SetVisualActive(true);
+            }
+        }
+    }
+
     public override void OnNetworkSpawn()
     {
         IsInitialized.OnValueChanged += OnInitializedChanged;
         ItemName.OnValueChanged += OnItemNameChanged;
         SetVisualActive(IsInitialized.Value);
+        // StartCoroutine(DistanceCullingRoutine());
 
         if(IsInitialized.Value)
         {

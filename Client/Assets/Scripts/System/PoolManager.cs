@@ -20,7 +20,7 @@ public class PoolManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null) { Destroy(gameObject); return; }
+        if (Instance != null) { Destroy(this); return; }
         Instance = this;
 
         foreach (var element in poolElements)

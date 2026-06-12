@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -8,17 +9,12 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 강화 UI 패널.
-/// 장비 목록에서 항목을 선택하면 infoText에 이름·스탯 변화·보유 강화석 정보를 표시하고,
-/// 강화석이 충분할 때 강화 버튼을 활성화한다.
-/// 강화석 item_id: 기본 5010(강화석). Inspector에서 변경 가능.
+/// 인벤토리/장착 슬롯에서 무기·방어구를 선택해 강화한다.
+/// 강화 실패 시 DestroyRate에 따라 아이템이 파괴될 수 있다.
+/// 강화석 item_id: 기본 5010. Inspector에서 변경 가능.
 /// </summary>
 public class EnhancePanel : MonoBehaviour
 {
-    [Header("SO 참조")]
-    [SerializeField] private EnhanceTableSO    enhanceTable;
-    [SerializeField] private EquipmentDetailSO equipDetail;
-    [SerializeField] private ItemTableSO       itemTable;
-
     [Header("강화 슬롯 (선택 장비 표시)")]
     [SerializeField] private Image    itemIcon;
     [SerializeField] private Image    itemGradeBorder;
@@ -42,13 +38,20 @@ public class EnhancePanel : MonoBehaviour
     [Header("강화석 아이템 ID")]
     [SerializeField] private int stoneItemId = 5010;
 
-    private static readonly int MaxEnhanceLevel = 20;
+    private static readonly int MaxWeaponEnhanceLevel = 20;
+    private static readonly int MaxArmorEnhanceLevel  = 10;
 
-    private readonly List<EnhanceSlot> _slots       = new();
-    private EnhanceSlot                _selectedSlot;
-    private InventorySlotData          _selectedItem;
-    private InventorySlotData          _stoneSlot;
-    private bool                       _selectedItemIsEquipped;
+    private readonly List<EnhanceSlot>       _slots      = new();
+    private readonly List<InventorySlotData> _stoneSlots = new();
+    private EnhanceSlot                      _selectedSlot;
+    private InventorySlotData                _selectedItem;
+    private bool                             _selectedItemIsEquipped;
+    private Tween                            _resultClearTween;
+
+    private int TotalStoneQty
+    {
+        get { int t = 0; foreach (var s in _stoneSlots) t += s.Quantity; return t; }
+    }
 
     private void Awake()
     {
@@ -98,7 +101,7 @@ public class EnhancePanel : MonoBehaviour
     public void OnEnhanceClicked()
     {
         SoundManager.Instance.PlaySFX2D("ItemSelect");
-        if (_selectedItem == null || _stoneSlot == null) return;
+        if (_selectedItem == null || _stoneSlots.Count == 0) return;
         StartCoroutine(DoEnhance());
     }
 
@@ -127,27 +130,25 @@ public class EnhancePanel : MonoBehaviour
         foreach (var s in _slots) if (s != null) Destroy(s.gameObject);
         _slots.Clear();
 
-        _stoneSlot = null;
+        _stoneSlots.Clear();
         InventorySlotData prevSelected = _selectedItem;
         _selectedSlot = null;
         _selectedItem = null;
 
         foreach (var item in items)
         {
-            ItemEntry info = itemTable != null ? itemTable.GetById(item.item_id) : null;
+            ItemEntry info = GameDataSO.Instance.ItemTable != null ? GameDataSO.Instance.ItemTable.GetById(item.item_id) : null;
             if (info == null) continue;
 
             if (info.ItemID == stoneItemId)
             {
-                _stoneSlot = new InventorySlotData(item.id, info, item.quantity, item.enhance_level, item.quickslot_index);
+                _stoneSlots.Add(new InventorySlotData(item.id, info, item.quantity, item.enhance_level, item.quickslot_index));
                 continue;
             }
 
             if (info.ItemType != "Equipment") continue;
-            EquipmentDetailEntry detail = equipDetail != null ? equipDetail.GetById(info.ItemID) : null;
+            EquipmentDetailEntry detail = GameDataSO.Instance.EquipDetail != null ? GameDataSO.Instance.EquipDetail.GetById(info.ItemID) : null;
             if (detail == null) continue;
-            bool isWeapon = detail.WeaponType == "Sword" || detail.WeaponType == "Staff" || detail.WeaponType == "Bow";
-            if (!isWeapon) continue;
 
             var data = new InventorySlotData(item.id, info, item.quantity, item.enhance_level, item.quickslot_index);
             EnhanceSlot slot = Instantiate(slotPrefab, slotsParent, false);
@@ -165,9 +166,7 @@ public class EnhancePanel : MonoBehaviour
 
         foreach (var item in equippedItems)
         {
-            if (item.slot_type != "weapon") continue;
-
-            ItemEntry info = itemTable != null ? itemTable.GetById(item.item_id) : null;
+            ItemEntry info = GameDataSO.Instance.ItemTable != null ? GameDataSO.Instance.ItemTable.GetById(item.item_id) : null;
             if (info == null) continue;
 
             var data = new InventorySlotData(item.id, info, 1, item.enhance_level, -1);
@@ -189,6 +188,28 @@ public class EnhancePanel : MonoBehaviour
         RefreshEnhanceButton();
         if (_enhanceUICG != null) { _enhanceUICG.alpha = 1f; _enhanceUICG.interactable = true; _enhanceUICG.blocksRaycasts = true; }
     }
+
+    // ─── 헬퍼 ───────────────────────────────────────────────────────────────
+
+    private bool IsWeaponItem(InventorySlotData item)
+    {
+        EquipmentDetailEntry detail = GameDataSO.Instance.EquipDetail != null ? GameDataSO.Instance.EquipDetail.GetById(item.ItemInfo.ItemID) : null;
+        return detail != null && detail.WeaponType != "None" && !string.IsNullOrEmpty(detail.WeaponType);
+    }
+
+    private string GetArmorSlotType(InventorySlotData item)
+    {
+        EquipmentDetailEntry detail = GameDataSO.Instance.EquipDetail != null ? GameDataSO.Instance.EquipDetail.GetById(item.ItemInfo.ItemID) : null;
+        return detail?.EquipType ?? "";
+    }
+
+    private int GetMaxEnhanceLevel()
+    {
+        if (_selectedItem == null) return MaxWeaponEnhanceLevel;
+        return IsWeaponItem(_selectedItem) ? MaxWeaponEnhanceLevel : MaxArmorEnhanceLevel;
+    }
+
+    // ─── UI 갱신 ────────────────────────────────────────────────────────────
 
     private void UpdateItemDisplay()
     {
@@ -215,17 +236,14 @@ public class EnhancePanel : MonoBehaviour
             return;
         }
 
-        int currentLevel = _selectedItem.EnhanceLevel;
-
-        EquipmentDetailEntry detail  = equipDetail != null ? equipDetail.GetById(_selectedItem.ItemInfo.ItemID) : null;
-        string               wepType = detail != null && detail.WeaponType != null ? detail.WeaponType : "";
-
+        int currentLevel  = _selectedItem.EnhanceLevel;
+        int maxLevel      = GetMaxEnhanceLevel();
 
         var sb = new StringBuilder();
         sb.AppendLine($"<color={GradeUtil.GetHex(_selectedItem.ItemInfo.Grade)}>{_selectedItem.ItemInfo.Name}</color>");
         sb.AppendLine();
 
-        if (currentLevel >= MaxEnhanceLevel)
+        if (currentLevel >= maxLevel)
         {
             sb.Append("최대 강화 단계입니다.");
             infoText.text = sb.ToString();
@@ -233,27 +251,64 @@ public class EnhancePanel : MonoBehaviour
         }
 
         int nextLevel = currentLevel + 1;
-        EnhanceEntry entry = enhanceTable != null ? enhanceTable.GetByLevel(nextLevel) : null;
+        EnhanceEntry entry = GameDataSO.Instance.EnhanceTable != null ? GameDataSO.Instance.EnhanceTable.GetByLevel(nextLevel) : null;
         if (entry == null) { infoText.text = sb.ToString(); return; }
-
-        float addAtk  = wepType == "Sword" ? entry.SwordAdd : wepType == "Staff" ? entry.StaffAdd : entry.BowAdd;
-        float curAtk  = (detail != null ? detail.ATK : 0f) + (enhanceTable != null ? enhanceTable.GetCumulativeATKBonus(wepType, currentLevel) : 0f);
-
-        EnhanceEntry curEntry = currentLevel > 0 && enhanceTable != null ? enhanceTable.GetByLevel(currentLevel) : null;
-        int curCrit  = curEntry != null ? curEntry.CritChance : 0;
-        int nextCrit = entry.CritChance;
 
         sb.AppendLine($"다음 강화 레벨 : +{nextLevel}");
 
-        if (addAtk != 0f)
-            sb.AppendLine($"공격력: {curAtk:F2} → {curAtk + addAtk:F2}");
-        if (nextCrit != curCrit)
-            sb.AppendLine($"치명타 확률: {curCrit}% → {nextCrit}%");
+        EquipmentDetailEntry detail = GameDataSO.Instance.EquipDetail != null ? GameDataSO.Instance.EquipDetail.GetById(_selectedItem.ItemInfo.ItemID) : null;
+
+        if (IsWeaponItem(_selectedItem))
+        {
+            // 무기: 공격력·치명타 표시
+            string wepType = detail != null ? detail.WeaponType : "";
+            float addAtk  = wepType == "Sword" ? entry.SwordAdd : wepType == "Staff" ? entry.StaffAdd : entry.BowAdd;
+            float curAtk  = (detail != null ? detail.ATK : 0f)
+                          + (GameDataSO.Instance.EnhanceTable != null ? GameDataSO.Instance.EnhanceTable.GetCumulativeATKBonus(wepType, currentLevel) : 0f);
+
+            EnhanceEntry curEntry = currentLevel > 0 && GameDataSO.Instance.EnhanceTable != null ? GameDataSO.Instance.EnhanceTable.GetByLevel(currentLevel) : null;
+            int curCrit  = curEntry  != null ? curEntry.CritChance : 0;
+            int nextCrit = entry.CritChance;
+
+            if (addAtk  != 0f)          sb.AppendLine($"공격력: {curAtk:F2} → {curAtk + addAtk:F2}");
+            if (nextCrit != curCrit)     sb.AppendLine($"치명타 확률: {curCrit}% → {nextCrit}%");
+        }
+        else
+        {
+            // 방어구: 슬롯별 스탯 표시
+            string slotType = GetArmorSlotType(_selectedItem);
+            ArmorEnhanceEntry curArmor  = currentLevel > 0 ? GameDataSO.Instance.ArmorEnhanceTable?.GetBySlotAndLevel(slotType, currentLevel) : null;
+            ArmorEnhanceEntry nextArmor = GameDataSO.Instance.ArmorEnhanceTable?.GetBySlotAndLevel(slotType, nextLevel);
+
+            if (nextArmor != null)
+            {
+                float baseDef   = detail != null ? detail.DEF : 0f;
+                float baseHp    = detail != null ? detail.HP  : 0f;
+                float baseAtk   = detail != null ? detail.ATK : 0f;
+                float baseSpd   = detail != null ? detail.SPD : 0f;
+                float baseAps   = detail != null ? detail.APS : 0f;
+                float baseHpr   = detail != null ? detail.HPR : 0f;
+
+                float curDef  = baseDef + (curArmor != null ? curArmor.DefAdd       : 0f);
+                float curHp   = baseHp  + (curArmor != null ? curArmor.HealthAdd    : 0f);
+                float curAtk  = baseAtk + (curArmor != null ? curArmor.AtkAdd       : 0f);
+                float curSpd  = baseSpd + (curArmor != null ? curArmor.MoveSpeedAdd : 0f);
+                float curAps  = baseAps + (curArmor != null ? curArmor.APSAdd       : 0f);
+                float curHpr  = baseHpr + (curArmor != null ? curArmor.HPRAdd       : 0f);
+
+                if (nextArmor.DefAdd       > 0) sb.AppendLine($"방어력: {curDef:F2} → {baseDef + nextArmor.DefAdd:F2}");
+                if (nextArmor.HealthAdd    > 0) sb.AppendLine($"체력: {curHp:F2} → {baseHp + nextArmor.HealthAdd:F2}");
+                if (nextArmor.AtkAdd       > 0) sb.AppendLine($"공격력: {curAtk:F2} → {baseAtk + nextArmor.AtkAdd:F2}");
+                if (nextArmor.MoveSpeedAdd > 0) sb.AppendLine($"이동속도: {curSpd:F2} → {baseSpd + nextArmor.MoveSpeedAdd:F2}");
+                if (nextArmor.APSAdd       > 0) sb.AppendLine($"공격속도: {curAps:F3} → {baseAps + nextArmor.APSAdd:F3}");
+                if (nextArmor.HPRAdd       > 0) sb.AppendLine($"HP 회복: {curHpr:F3} → {baseHpr + nextArmor.HPRAdd:F3}");
+            }
+        }
 
         sb.AppendLine();
-
-        int stoneQty = _stoneSlot != null ? _stoneSlot.Quantity : 0;
-        sb.Append($"강화석: {stoneQty}개 보유 / {entry.ReqStone}개 필요  (성공률 {(int)entry.SuccessRate}%)");
+        sb.Append($"강화석: {TotalStoneQty}개 보유 / {entry.ReqStone}개 필요  (성공률 {(int)entry.SuccessRate}%)");
+        if (entry.DestroyRate > 0)
+            sb.Append($"\n파괴 확률 {entry.DestroyRate}%");
 
         infoText.text = sb.ToString();
     }
@@ -262,74 +317,115 @@ public class EnhancePanel : MonoBehaviour
     {
         if (enhanceButton == null) return;
 
-        if (_selectedItem == null || _selectedItem.EnhanceLevel >= MaxEnhanceLevel)
+        if (_selectedItem == null || _selectedItem.EnhanceLevel >= GetMaxEnhanceLevel())
         {
             enhanceButton.interactable = false;
             return;
         }
 
-        EnhanceEntry entry   = enhanceTable != null ? enhanceTable.GetByLevel(_selectedItem.EnhanceLevel + 1) : null;
-        int          stoneQty = _stoneSlot  != null ? _stoneSlot.Quantity : 0;
-        enhanceButton.interactable = entry != null && stoneQty >= entry.ReqStone;
+        EnhanceEntry entry = GameDataSO.Instance.EnhanceTable != null ? GameDataSO.Instance.EnhanceTable.GetByLevel(_selectedItem.EnhanceLevel + 1) : null;
+        enhanceButton.interactable = entry != null && TotalStoneQty >= entry.ReqStone;
     }
+
+    private void ConsumeStoneLocally(int amount)
+    {
+        int remaining = amount;
+        while (remaining > 0 && _stoneSlots.Count > 0)
+        {
+            var slot    = _stoneSlots[0];
+            int consume = Mathf.Min(slot.Quantity, remaining);
+            slot.Quantity -= consume;
+            remaining     -= consume;
+            if (slot.Quantity <= 0) _stoneSlots.RemoveAt(0);
+        }
+    }
+
+    // ─── 강화 실행 ──────────────────────────────────────────────────────────
 
     private IEnumerator DoEnhance()
     {
-        if (_selectedItem == null || _stoneSlot == null) yield break;
+        if (_selectedItem == null || _stoneSlots.Count == 0) yield break;
 
-        EnhanceEntry entry = enhanceTable != null ? enhanceTable.GetByLevel(_selectedItem.EnhanceLevel + 1) : null;
+        EnhanceEntry entry = GameDataSO.Instance.EnhanceTable != null ? GameDataSO.Instance.EnhanceTable.GetByLevel(_selectedItem.EnhanceLevel + 1) : null;
         if (entry == null) yield break;
 
         enhanceButton.interactable = false;
-        if (resultText != null) resultText.text = "";
 
-        yield return StartCoroutine(DataAPI.EnhanceWeapon(
-            UserSession.DbUserId,
-            _selectedItem.InventoryId,
-            _stoneSlot.InventoryId,
-            (int)entry.SuccessRate,
-            entry.ReqStone,
-            onSuccess: res =>
-            {
-                if (resultText != null)
-                {
-                    resultText.gameObject.SetActive(true);
-                    resultText.text = res.success ? $"강화 성공! +{res.new_enhance_level}" : "강화 실패...";
-                    DOVirtual.DelayedCall(3f, () => {resultText.text = "";}).SetLink(gameObject);
-                }
+        bool isWeapon = IsWeaponItem(_selectedItem);
 
-                // 강화석 소모
-                _stoneSlot.Quantity -= entry.ReqStone;
+        // 콜백을 로컬 변수로 분리해 무기/방어구 공통 사용
+        Action<EnhanceResponse> onSuccess = res => HandleEnhanceResult(res, entry.ReqStone);
+        Action<string>          onError   = HandleEnhanceError;
 
-                // 성공 시 강화 레벨 갱신
-                if (res.success)
-                {
-                    _selectedItem = new InventorySlotData(
-                        _selectedItem.InventoryId, _selectedItem.ItemInfo,
-                        _selectedItem.Quantity, res.new_enhance_level, _selectedItem.QuickslotIndex);
-
-                    if (_selectedSlot != null)
-                    {
-                        _selectedSlot.Setup(_selectedItem);
-                        _selectedSlot.SetSelected(true);
-                    }
-
-                    if (_selectedItemIsEquipped && InventoryManager.Instance != null && InventoryManager.Instance.EquipmentPanel != null)
-                        InventoryManager.Instance.EquipmentPanel.RefreshEquipped();
-                }
-
-                UpdateItemDisplay();
-                UpdateInfoText();
-                RefreshEnhanceButton();
-            },
-            onError: err =>
-            {
-                string msg = err.Contains("강화석") ? "강화석이 부족합니다." :
-                             err.Contains("최대")   ? "최대 강화 단계입니다." : err;
-                if (resultText != null) { resultText.gameObject.SetActive(true); resultText.text = msg; }
-                RefreshEnhanceButton();
-            }
-        ));
+        if (isWeapon)
+            yield return StartCoroutine(DataAPI.EnhanceWeapon(
+                UserSession.DbUserId, _selectedItem.InventoryId, stoneItemId,
+                (int)entry.SuccessRate, entry.ReqStone, entry.DestroyRate,
+                onSuccess, onError));
+        else
+            yield return StartCoroutine(DataAPI.EnhanceArmor(
+                UserSession.DbUserId, _selectedItem.InventoryId, stoneItemId,
+                (int)entry.SuccessRate, entry.ReqStone, entry.DestroyRate,
+                onSuccess, onError));
     }
 
+    private void HandleEnhanceResult(EnhanceResponse res, int reqStone)
+    {
+        if (res.destroyed)
+        {
+            SoundManager.Instance.PlaySFX2D("EnhanceFailed");
+            _resultClearTween?.Kill();
+            if (resultText != null) { resultText.gameObject.SetActive(true); resultText.text = "장비가 파괴됐습니다!"; }
+
+            if (_selectedSlot != null) { Destroy(_selectedSlot.gameObject); _slots.Remove(_selectedSlot); }
+            if (_selectedItemIsEquipped && InventoryManager.Instance?.EquipmentPanel != null)
+                InventoryManager.Instance.EquipmentPanel.RefreshEquipped();
+
+            _selectedSlot           = null;
+            _selectedItem           = null;
+            _selectedItemIsEquipped = false;
+
+            UpdateItemDisplay();
+            UpdateInfoText();
+            RefreshEnhanceButton();
+            _resultClearTween = DOVirtual.DelayedCall(3f, () => { if (resultText != null) resultText.text = ""; }).SetLink(gameObject);
+            return;
+        }
+
+        ConsumeStoneLocally(reqStone);
+
+        if (resultText != null)
+        {
+            _resultClearTween?.Kill();
+            resultText.gameObject.SetActive(true);
+            if (res.success) SoundManager.Instance.PlaySFX2D("EnhanceSuccess");
+            else             SoundManager.Instance.PlaySFX2D("EnhanceFailed");
+            resultText.text = res.success ? $"강화 성공! +{res.new_enhance_level}" : "강화 실패...";
+            _resultClearTween = DOVirtual.DelayedCall(3f, () => { if (resultText != null) resultText.text = ""; }).SetLink(gameObject);
+        }
+
+        if (res.success)
+        {
+            _selectedItem = new InventorySlotData(
+                _selectedItem.InventoryId, _selectedItem.ItemInfo,
+                _selectedItem.Quantity, res.new_enhance_level, _selectedItem.QuickslotIndex);
+
+            if (_selectedSlot != null) { _selectedSlot.Setup(_selectedItem); _selectedSlot.SetSelected(true); }
+
+            if (_selectedItemIsEquipped && InventoryManager.Instance?.EquipmentPanel != null)
+                InventoryManager.Instance.EquipmentPanel.RefreshEquipped();
+        }
+
+        UpdateItemDisplay();
+        UpdateInfoText();
+        RefreshEnhanceButton();
+    }
+
+    private void HandleEnhanceError(string err)
+    {
+        string msg = err.Contains("강화석") ? "강화석이 부족합니다." :
+                     err.Contains("최대")   ? "최대 강화 단계입니다." : err;
+        if (resultText != null) { resultText.gameObject.SetActive(true); resultText.text = msg; }
+        RefreshEnhanceButton();
+    }
 }

@@ -15,18 +15,17 @@ public class StoragePanel : MonoBehaviour
     [Header("슬롯 (20칸 고정)")]
     [SerializeField] private InventorySlot[] slots;
 
-    [Header("SO 참조")]
-    [SerializeField] private ItemTableSO itemTable;
-
     public bool IsOpen { get; private set; }
 
     private InventorySlot _selectedStorageSlot;
     private bool _fetchInProgress;
+    private CanvasGroup _storageCG;
 
     private void Awake()
     {
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
+        _storageCG = GetComponent<CanvasGroup>();
     }
 
     // ─── 열기/닫기 ───────────────────────────────────────────────────────
@@ -35,6 +34,7 @@ public class StoragePanel : MonoBehaviour
     {
         IsOpen = true;
         UI_Menu.Instance?.OpenStorage(this);
+        if (_storageCG != null) { _storageCG.alpha = 0f; _storageCG.interactable = false; _storageCG.blocksRaycasts = false; }
 
         foreach (var slot in slots)
             slot.ClickOverride = s => OnStorageSlotClicked(s);
@@ -86,8 +86,8 @@ public class StoragePanel : MonoBehaviour
         _selectedStorageSlot = slot;
         slot.SetSelected(true);
 
-        var equipDetail  = InventoryManager.Instance?.EquipDetail?.GetById(slot.Data.ItemInfo.ItemID);
-        var consumDetail = InventoryManager.Instance?.ConsumDetail?.GetById(slot.Data.ItemInfo.ItemID);
+        var equipDetail  = GameDataSO.Instance.EquipDetail?.GetById(slot.Data.ItemInfo.ItemID);
+        var consumDetail = GameDataSO.Instance.ConsumDetail?.GetById(slot.Data.ItemInfo.ItemID);
         InventoryManager.Instance?.ItemInfoPanel?.ShowStorageItem(slot.Data, equipDetail, consumDetail);
     }
 
@@ -164,7 +164,11 @@ public class StoragePanel : MonoBehaviour
 
         yield return StartCoroutine(DataAPI.GetStorage(UserSession.DbUserId,
             onSuccess: res => PopulateSlots(res.items),
-            onError:   err => Debug.LogError("[Storage] 조회 실패: " + err)
+            onError:   err =>
+            {
+                Debug.LogError("[Storage] 조회 실패: " + err);
+                if (_storageCG != null) { _storageCG.alpha = 1f; _storageCG.interactable = true; _storageCG.blocksRaycasts = true; }
+            }
         ));
 
         _fetchInProgress = false;
@@ -178,12 +182,14 @@ public class StoragePanel : MonoBehaviour
         foreach (var item in serverItems)
         {
             if (i >= slots.Length) break;
-            ItemEntry itemInfo = itemTable?.GetById(item.item_id);
+            ItemEntry itemInfo = GameDataSO.Instance.ItemTable?.GetById(item.item_id);
             if (itemInfo == null) { i++; continue; }
 
             var data = new InventorySlotData(item.id, itemInfo, item.quantity, item.enhance_level);
             slots[i].Setup(data);
             i++;
         }
+
+        if (_storageCG != null) { _storageCG.alpha = 1f; _storageCG.interactable = true; _storageCG.blocksRaycasts = true; }
     }
 }

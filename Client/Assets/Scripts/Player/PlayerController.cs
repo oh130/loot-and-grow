@@ -1,6 +1,7 @@
 using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : NetworkBehaviour
 {
@@ -14,6 +15,15 @@ public class PlayerController : NetworkBehaviour
 	[SerializeField] private PlayerCombat playerCombat;
 	[SerializeField] private ClientManager clientManager;
 	[SerializeField] private PlayerRuntimeStat playerRuntimeStat;
+	[SerializeField] private PlayerRelativeCam playerRelativeCam;
+
+	[SerializeField] private float maxStamina = 100f;
+	[SerializeField] private float currentStamina = 100f;
+	[SerializeField] private float dashStaminaCost = 30f;
+	private float staminaRegenRate = 20f;
+	private float staminaRegenDelay = 0.35f;
+	private float staminaRegenDelayTimer = 0f;
+	[SerializeField] private Image staminaBar;
 
 	private Vector3 velocity = Vector3.zero;
     private bool _canMove = true;
@@ -85,6 +95,13 @@ public class PlayerController : NetworkBehaviour
 		);
 	}
 
+	private void UpdateStaminaUI()
+	{
+		if (staminaBar == null) return;
+
+		staminaBar.fillAmount = currentStamina / maxStamina;
+	}
+
 	private void Update()
 	{
 		if (!IsOwner) return;
@@ -114,6 +131,26 @@ public class PlayerController : NetworkBehaviour
 			{
 				_isDash = false;
 			}
+			UpdateStaminaUI();
+			return;
+		}
+
+		RecoverStamina();
+		UpdateStaminaUI();
+	}
+
+	private void RecoverStamina()
+	{
+		if (staminaRegenDelayTimer > 0f)
+		{
+			staminaRegenDelayTimer -= Time.deltaTime;
+			return;
+		}
+
+		if (currentStamina < maxStamina)
+		{
+			currentStamina += staminaRegenRate * Time.deltaTime;
+			currentStamina = Mathf.Min(currentStamina, maxStamina);
 		}
 	}
 
@@ -128,6 +165,12 @@ public class PlayerController : NetworkBehaviour
 			cineCam.Target.TrackingTarget = cameraTarget;
 			cineCam.Target.LookAtTarget = cameraTarget;
 			joy = FindFirstObjectByType<VariableJoystick>();
+
+			GameObject staminaBarObj = GameObject.Find("StaminaBar");
+			if (staminaBarObj != null)
+			{
+				staminaBar = staminaBarObj.GetComponent<Image>();
+			}
 		}
     }
 
@@ -150,18 +193,30 @@ public class PlayerController : NetworkBehaviour
 		if (dashCooldownTimer > 0f) return;
 		if (!clientManager.IsInitialized.Value) return;
 
+		if (currentStamina < dashStaminaCost) return;
+
 		if (playerCombat != null && playerCombat.IsCastingStaff)
 		{
 			return;
 		}
 
-		dashDirection = transform.forward.normalized;
+		currentStamina -= dashStaminaCost;
+		staminaRegenDelayTimer = staminaRegenDelay;
+
+		if (playerRelativeCam != null)
+		{
+			playerRelativeCam.RotatePlayerToCameraWhenAct();
+		}
+
+		dashDirection = transform.forward;
+		dashDirection.y = 0f;
+		dashDirection.Normalize();
+
+		animSync.RequestAnimationServerRpc(PlayerAnimationEnum.Dash);
 
 		_isDash = true;
 		dashTimer = dashDuration;
 		dashCooldownTimer = dashCooldown;
-
-		animSync.RequestAnimationServerRpc(PlayerAnimationEnum.Dash);
 	}
 
 	// public void ApplyStat(PlayerStat stat)

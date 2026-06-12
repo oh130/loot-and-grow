@@ -25,34 +25,65 @@ public class PlayerCombat : NetworkBehaviour
 	[SerializeField] private WeaponType currentWeapon;
 
 	[Header("Attack - Hand")]
-	[SerializeField] private float handRange = 1.0f;
-	[SerializeField] private float handAngle = 40f;
+	[SerializeField] private float handRange = 2.0f;
+	[SerializeField] private float handAngle = 90f;
 
 	[Header("Attack - Sword")]
-	[SerializeField] private float swordRange = 2.2f;
-	[SerializeField] private float swordAngle = 90f;
+	[SerializeField] private float swordRange = 2.8f;
+	[SerializeField] private float swordAngle = 140f;
+	[SerializeField] private float swordHitRadius = 1.0f;
+	[SerializeField] private float swordCloseHitRange = 1.3f;
 	[SerializeField] private float comboResetTime = 1.0f;
 	[SerializeField] private NetworkObject swordSkillPrefab;
+
+	[Header("Sword Attack Effects")]
+	[SerializeField] private NetworkObject swordAttackEffect1;
+	[SerializeField] private NetworkObject swordAttackEffect2;
+	[SerializeField] private NetworkObject swordAttackEffect3;
 
 	[Header("Attack - Staff")]
 	[SerializeField] private NetworkObject magicProjectilePrefab;
 	[SerializeField] private Transform projectileSpawnPoint;
 	[SerializeField] private NetworkObject staffSkillPrefab;
-	[SerializeField] private float minStaffChargeTime = 1.5f;
+	[SerializeField] private float minStaffChargeTime = 1.2f;
 	[SerializeField] private float staffChargeMoveSpeedMultiplier = 0.4f;
+
+	[SerializeField] private float staffAutoTargetRange = 35f;
+	[SerializeField] private float staffAutoTargetAngle = 80f;
+	[SerializeField] private float staffAimHeightOffset = 1.0f;
+	[SerializeField] private LayerMask staffTargetMask;
+	[SerializeField] private GameObject staffTargetIndicatorPrefab;
+
+	[Header("Staff Skill Effects")]
+	[SerializeField] private NetworkObject staffSkillEffectPrefab;
+	[SerializeField] private float staffSkillEffectDuration = 2.0f;
+
+	[Header("Staff Attack Effects")]
+	[SerializeField] private NetworkObject staffChargeEffectPrefab;
+	[SerializeField] private NetworkObject staffReleaseEffectPrefab;
+	[SerializeField] private float staffReleaseEffectDuration = 1.0f;
+	[SerializeField] private NetworkObject staffChargeSubEffectPrefab;
 
 	[Header("Attack - Arrow")]
 	[SerializeField] private float minChargeTime = 0.2f;
-	[SerializeField] private float maxChargeTime = 2.0f;
+	[SerializeField] private float maxChargeTime = 0.6f;
 	[SerializeField] private float minArrowDamageMultiplier = 0.5f;
-	[SerializeField] private float maxArrowDamageMultiplier = 2.0f;
+	[SerializeField] private float maxArrowDamageMultiplier = 1.5f;
 	[SerializeField] private float minArrowSpeed = 10f;
 	[SerializeField] private float maxArrowSpeed = 25f;
+	[SerializeField] private float arrowAutoTargetRange = 60f;
+	[SerializeField] private float arrowAimHeightOffset = 1.0f;
+	[SerializeField] private float arrowAutoTargetRadius = 4.0f;
+	[SerializeField] private float arrowAutoTargetAngle = 70f;
 	[SerializeField] private NetworkObject arrowProjectilePrefab;
 	[SerializeField] private Transform arrowSpawnPoint;
 	[SerializeField] private LineRenderer arrowTrajectoryLine;
 	[SerializeField] private GameObject targetIndicatorPrefab;
 	[SerializeField] private LayerMask arrowTargetMask;
+
+	[Header("Arrow Attack Effects")]
+	[SerializeField] private NetworkObject arrowReleaseEffectPrefab;
+	[SerializeField] private float arrowReleaseEffectDuration = 1.0f;
 
 	[Header("References")]
 	[SerializeField] private Transform attackOrigin;
@@ -60,7 +91,7 @@ public class PlayerCombat : NetworkBehaviour
 	[SerializeField] private PlayerAnimSync animSync;
 	[SerializeField] private ClientManager clientManager;
 	[SerializeField] private PlayerRuntimeStat playerRuntimeStat;
-	[SerializeField] private PlayerRelativeCam playerRelativeCam;	
+	[SerializeField] private PlayerRelativeCam playerRelativeCam;
 
 	private float lastAttackTime = -999f;
 	private float lastSkillTime = -999f;
@@ -74,6 +105,10 @@ public class PlayerCombat : NetworkBehaviour
 	private float trajectoryTimeStep = 0.08f;
 	private float trajectoryHitRadius = 0.25f;
 	private GameObject currentTargetIndicator;
+	private GameObject currentStaffTargetIndicator;
+	private NetworkObject currentStaffChargeEffect;
+	private NetworkObject currentStaffChargeSubEffect;
+	private GameObject skillButton;
 
 	private bool _isAttacking = false; // 공격과 스킬을 동시 사용 못하도록
 	public bool IsAttacking => _isAttacking;
@@ -97,24 +132,34 @@ public class PlayerCombat : NetworkBehaviour
 		if (itemId == -1)
 		{
 			SetWeaponType(WeaponType.Hand);
+			skillButton.SetActive(false);
 			return;
 		}
 		if (itemId >= 3088)
 		{
 			SetWeaponType(WeaponType.Arrow);
+			skillButton.SetActive(true);
 		}
 		else if (itemId >= 3084 && itemId <= 3087)
 		{
 			SetWeaponType(WeaponType.Staff);
+			skillButton.SetActive(true);
 		} // d
 		else
 		{
 			SetWeaponType(WeaponType.Sword);
+			skillButton.SetActive(true);
 		}
 	}
 
 	private void SetWeaponType(WeaponType weaponType)
 	{
+		ForceCancelArrowCharge();
+		if (animSync != null)
+		{
+			animSync.RequestAnimationServerRpc(PlayerAnimationEnum.Neutral);
+		}
+
 		currentWeapon = weaponType;
 
 		switch (currentWeapon)
@@ -133,6 +178,7 @@ public class PlayerCombat : NetworkBehaviour
 
 	private void Awake()
 	{
+		skillButton = GameObject.Find("Button_Skill");
 		switch (currentWeapon)
 		{
 			case WeaponType.Hand:
@@ -167,6 +213,7 @@ public class PlayerCombat : NetworkBehaviour
 		if (isChargingStaff)
 		{
 			RefreshCombatCamera();
+			UpdateStaffTargetPreview();
 		}
 	}
 
@@ -229,13 +276,16 @@ public class PlayerCombat : NetworkBehaviour
 		_isAttacking = true;
 
 		playerRelativeCam.RotatePlayerToCameraWhenAct();
-		RefreshCombatCamera();
+
+		if (currentWeapon != WeaponType.Hand && currentWeapon != WeaponType.Sword)
+		{
+			RefreshCombatCamera();
+		}
+
 		switch (currentWeapon)
 		{
 			case WeaponType.Hand:
-				animSync.RequestAnimationServerRpc(PlayerAnimationEnum.HandAttack);
-				RequestSwordAttackServerRpc(1);
-				_isAttacking = false;
+				StartCoroutine(HandAttackRoutine());
 				break;
 			case WeaponType.Sword:
 				HandleSwordCombo();
@@ -275,7 +325,7 @@ public class PlayerCombat : NetworkBehaviour
 				break;
 			case WeaponType.Sword:
 				StartCoroutine(SwordSkillRoutine());
-				_skillCooltimeFactor = 5.0f;
+				_skillCooltimeFactor = 7.0f;
 				break;
 			case WeaponType.Staff:
 				StartCoroutine(StaffSkillRoutine());
@@ -325,11 +375,22 @@ public class PlayerCombat : NetworkBehaviour
 		lastAttackTime = Time.time;
 	}
 
+	private IEnumerator HandAttackRoutine()
+	{
+		animSync.RequestAnimationServerRpc(PlayerAnimationEnum.HandAttack);
+		yield return new WaitForSeconds(0.8f);
+		RequestSwordAttackServerRpc(1);
+		_isAttacking = false;
+	}
+
 	private IEnumerator SwordAttackRoutine(int comboIndex)
 	{
 		yield return new WaitForSeconds(0.6f);
-		if(comboIndex == 3) yield return new WaitForSeconds(0.7f);
+		if (comboIndex == 3) yield return new WaitForSeconds(0.3f);
+
+		RequestSwordAttackEffectServerRpc(comboIndex);
 		RequestSwordAttackServerRpc(comboIndex);
+
 		yield return new WaitForSeconds(0.3f);
 
 		_isAttacking = false;
@@ -354,10 +415,40 @@ public class PlayerCombat : NetworkBehaviour
 		animSync.RequestAnimationServerRpc(PlayerAnimationEnum.StaffAttack);
 
 		yield return new WaitForSeconds(1f);
-		RequestStaffAttackServerRpc();
+		Vector3 dir = playerRelativeCam.GetCameraForward().normalized;
+		RequestStaffAttackServerRpc(dir);
 
 		_isAttacking = false;
 		isCastingStaff = false;
+	}
+
+	[ServerRpc]
+	private void RequestStaffSkillEffectServerRpc(ServerRpcParams rpcParams = default)
+	{
+		ulong attackerClientId = rpcParams.Receive.SenderClientId;
+
+		if (!ServerManager.Instance.UserContexts.ContainsKey(attackerClientId)) return;
+
+		GameObject attackerObject = ServerManager.Instance.UserContexts[attackerClientId].PlayerObject;
+		if (attackerObject == null) return;
+
+		Transform attackerTransform = attackerObject.transform;
+
+		Vector3 spawnPos = attackerTransform.position;
+
+		Quaternion spawnRot = Quaternion.LookRotation(attackerTransform.forward);
+
+		if (staffSkillEffectPrefab == null) return;
+
+		NetworkObject effectObj = Instantiate(
+			staffSkillEffectPrefab,
+			spawnPos,
+			spawnRot
+		);
+
+		effectObj.Spawn(true);
+
+		StartCoroutine(DespawnEffectAfterDelay(effectObj, staffSkillEffectDuration));
 	}
 
 	private IEnumerator StaffSkillRoutine()
@@ -365,13 +456,219 @@ public class PlayerCombat : NetworkBehaviour
 		isCastingStaff = true;
 		animSync.RequestAnimationServerRpc(PlayerAnimationEnum.StaffSkill);
 
-		yield return new WaitForSeconds(1.5f);
+		RequestStaffSkillEffectServerRpc();
+
+		yield return new WaitForSeconds(1f);
 		RequestStaffSkillServerRpc();
 		yield return new WaitForSeconds(1.25f);
 		// animSync.RequestAnimationServerRpc(PlayerAnimationEnum.Reset);
 
 		_isAttacking = false;
 		isCastingStaff = false;
+	}
+
+	private bool IsTargetReachableByArrowTrajectory(
+	Vector3 startPos,
+	Vector3 dir,
+	float arrowSpeed,
+	Transform target)
+	{
+		Vector3 velocity = dir * arrowSpeed;
+		Vector3 targetPos = target.position + Vector3.up * arrowAimHeightOffset;
+
+		for (int i = 0; i < trajectoryPointCount; i++)
+		{
+			float t = i * trajectoryTimeStep;
+
+			Vector3 point =
+				startPos +
+				velocity * t +
+				0.5f * Physics.gravity * t * t;
+
+			float distance = Vector3.Distance(point, targetPos);
+
+			if (distance <= trajectoryHitRadius * 1.5f)
+				return true;
+		}
+
+		return false;
+	}
+
+	[ServerRpc]
+	private void RequestArrowReleaseEffectServerRpc(ServerRpcParams rpcParams = default)
+	{
+		ulong attackerClientId = rpcParams.Receive.SenderClientId;
+
+		if (!ServerManager.Instance.UserContexts.ContainsKey(attackerClientId)) return;
+
+		GameObject attackerObject = ServerManager.Instance.UserContexts[attackerClientId].PlayerObject;
+		if (attackerObject == null) return;
+
+		Transform attackerTransform = attackerObject.transform;
+
+		Vector3 spawnPos =
+			attackerTransform.position +
+			attackerTransform.forward * 1.0f +
+			Vector3.up * 1.2f;
+
+		Quaternion spawnRot = Quaternion.LookRotation(attackerTransform.forward);
+
+		if (arrowReleaseEffectPrefab == null) return;
+
+		NetworkObject effectObj = Instantiate(
+			arrowReleaseEffectPrefab,
+			spawnPos,
+			spawnRot
+		);
+
+		effectObj.Spawn(true);
+
+		StartCoroutine(
+			DespawnEffectAfterDelay(
+				effectObj,
+				arrowReleaseEffectDuration
+			)
+		);
+	}
+
+	private bool TryCalculateBallisticDirection(Vector3 origin, Vector3 targetPos, float speed,	out Vector3 fireDir)
+	{
+		fireDir = Vector3.zero;
+
+		Vector3 toTarget = targetPos - origin;
+		Vector3 toTargetXZ = Vector3.ProjectOnPlane(toTarget, Vector3.up);
+
+		float x = toTargetXZ.magnitude;
+		float y = toTarget.y;
+		float g = Mathf.Abs(Physics.gravity.y);
+		float v2 = speed * speed;
+		float v4 = v2 * v2;
+
+		float discriminant = v4 - g * (g * x * x + 2f * y * v2);
+
+		if (discriminant < 0f)
+		{
+			return false;
+		}
+
+		float sqrt = Mathf.Sqrt(discriminant);
+		float angle = Mathf.Atan((v2 - sqrt) / (g * x));
+
+		Vector3 dirXZ = toTargetXZ.normalized;
+
+		fireDir =
+			dirXZ * Mathf.Cos(angle) +
+			Vector3.up * Mathf.Sin(angle);
+
+		fireDir.Normalize();
+
+		return true;
+	}
+
+	private bool TryGetArrowAutoTarget(Vector3 origin, Vector3 aimDir, out Transform target, out Vector3 targetDir)
+	{
+		target = null;
+		targetDir = aimDir;
+
+		Collider[] hits = Physics.OverlapSphere(
+			origin,
+			arrowAutoTargetRange,
+			arrowTargetMask
+		);
+
+		float bestScore = float.MaxValue;
+
+		float chargeTime = Time.time - arrowChargeStartTime;
+		float chargeRatio = Mathf.Clamp01(chargeTime / maxChargeTime);
+		float arrowSpeed = Mathf.Lerp(minArrowSpeed, maxArrowSpeed, chargeRatio);
+
+		Vector3 velocity = aimDir * arrowSpeed;
+
+		foreach (Collider hit in hits)
+		{
+			if (hit.transform.root == transform.root) continue;
+
+			Vector3 targetPos = hit.transform.position + Vector3.up * arrowAimHeightOffset;
+
+			float distanceFromOrigin = Vector3.Distance(origin, targetPos);
+			if (distanceFromOrigin > arrowAutoTargetRange) continue;
+
+			float lastT = (trajectoryPointCount - 1) * trajectoryTimeStep;
+
+			Vector3 lastPoint =
+				origin +
+				velocity * lastT +
+				0.5f * Physics.gravity * lastT * lastT;
+
+			float trajectoryReachDistance = Vector3.Distance(
+				Vector3.ProjectOnPlane(origin, Vector3.up),
+				Vector3.ProjectOnPlane(lastPoint, Vector3.up)
+			);
+
+			float targetFlatDistance = Vector3.Distance(
+				Vector3.ProjectOnPlane(origin, Vector3.up),
+				Vector3.ProjectOnPlane(targetPos, Vector3.up)
+			);
+
+			if (targetFlatDistance > trajectoryReachDistance)
+				continue;
+
+			Vector3 toTarget = targetPos - origin;
+			Vector3 dirToTarget = toTarget.normalized;
+
+			float angle = Vector3.Angle(aimDir, dirToTarget);
+
+			if (angle > arrowAutoTargetAngle * 0.5f)
+				continue;
+
+			float closestDistance = float.MaxValue;
+
+			for (int i = 0; i < trajectoryPointCount; i++)
+			{
+				float t = i * trajectoryTimeStep;
+
+				Vector3 point =
+					origin +
+					velocity * t +
+					0.5f * Physics.gravity * t * t;
+
+				float colliderRadius = hit.bounds.extents.magnitude * 0.7f;
+				float distance = Mathf.Max(0f, Vector3.Distance(point, targetPos) - colliderRadius);
+
+				if (distance < closestDistance)
+					closestDistance = distance;
+			}
+
+			if (closestDistance > arrowAutoTargetRadius)
+				continue;
+			
+			if (closestDistance < bestScore)
+			{
+				bestScore = closestDistance;
+				target = hit.transform;
+			}
+		}
+
+		if (target == null) return false;
+
+
+		Vector3 finalTargetPos =target.position + Vector3.up * arrowAimHeightOffset;
+
+		if (!TryCalculateBallisticDirection(
+			origin,
+			finalTargetPos,
+			arrowSpeed,
+			out targetDir))
+		{
+			targetDir = (finalTargetPos - origin).normalized;
+		}
+
+		return true;
+	}
+
+	private bool TryGetArrowAutoTargetDirection(Vector3 origin, Vector3 aimDir, out Vector3 targetDir)
+	{
+		return TryGetArrowAutoTarget(origin, aimDir, out _, out targetDir);
 	}
 
 	private void StartArrowCharge()
@@ -409,6 +706,8 @@ public class PlayerCombat : NetworkBehaviour
 			isChargingArrow = false;
 			isCastingArrow = false;
 			_isAttacking = false;
+
+			animSync.RequestAnimationServerRpc(PlayerAnimationEnum.Neutral);
 			HideArrowTrajectoryPreview();
 
 			return;
@@ -428,8 +727,13 @@ public class PlayerCombat : NetworkBehaviour
 			chargeRatio
 		);
 
-		Vector3 dir = (playerRelativeCam.GetCameraForward() + Vector3.up * 0.2f).normalized;
+		Vector3 origin = transform.position + transform.forward + Vector3.up * 1.2f;
+		Vector3 rawDir = (playerRelativeCam.GetCameraForward() + Vector3.up * 0.2f).normalized;
+		Vector3 dir = rawDir;
+		TryGetArrowAutoTargetDirection(origin, rawDir, out dir);
+
 		animSync.RequestAnimationServerRpc(PlayerAnimationEnum.ArrowAttack);
+		RequestArrowReleaseEffectServerRpc();
 
 		RequestChargedArrowAttackServerRpc(dir, damageMultiplier, arrowSpeed);
 
@@ -457,8 +761,19 @@ public class PlayerCombat : NetworkBehaviour
 			chargeRatio
 		);
 
-		Vector3 dir = (playerRelativeCam.GetCameraForward() + Vector3.up * 0.2f).normalized;
 		Vector3 startPos = transform.position + transform.forward + Vector3.up * 1.2f;
+		Vector3 rawDir = (playerRelativeCam.GetCameraForward() + Vector3.up * 0.2f).normalized;
+
+		Transform autoTarget;
+		Vector3 dir;
+
+		bool hasAutoTarget = TryGetArrowAutoTarget(
+			startPos,
+			rawDir,
+			out autoTarget,
+			out dir
+		);
+
 		Vector3 velocity = dir * arrowSpeed;
 
 		arrowTrajectoryLine.positionCount = trajectoryPointCount;
@@ -501,14 +816,25 @@ public class PlayerCombat : NetworkBehaviour
 			prevPoint = point;
 		}
 
-		if (foundTarget)
+		if (hasAutoTarget)
 		{
-			ShowTargetIndicator(bestHit.point);
+			ShowTargetIndicator(autoTarget.position);
 		}
 		else
 		{
 			HideTargetIndicator();
 		}
+	}
+
+	public void ForceCancelArrowCharge()
+	{
+		if (!isChargingArrow && !isCastingArrow) return;
+
+		isChargingArrow = false;
+		isCastingArrow = false;
+		_isAttacking = false;
+
+		HideArrowTrajectoryPreview();
 	}
 
 	private void ShowTargetIndicator(Vector3 position)
@@ -544,6 +870,200 @@ public class PlayerCombat : NetworkBehaviour
 		}
 	}
 
+	[ServerRpc]
+	public void ForceCancelStaffChargeServerRpc()
+	{
+		isChargingStaff = false;
+		isCastingStaff = false;
+
+		if (currentStaffChargeEffect != null && currentStaffChargeEffect.IsSpawned)
+		{
+			currentStaffChargeEffect.Despawn(true);
+			currentStaffChargeEffect = null;
+		}
+
+		if (currentStaffChargeSubEffect != null && currentStaffChargeSubEffect.IsSpawned)
+		{
+			currentStaffChargeSubEffect.Despawn(true);
+			currentStaffChargeSubEffect = null;
+		}
+	}
+
+	private bool TryGetStaffAutoTarget(
+	Vector3 origin,
+	Vector3 aimDir,
+	out Transform target,
+	out Vector3 targetDir)
+	{
+		target = null;
+		targetDir = aimDir;
+
+		Collider[] hits = Physics.OverlapSphere(origin, staffAutoTargetRange, staffTargetMask);
+
+		float bestScore = float.MaxValue;
+
+		foreach (Collider hit in hits)
+		{
+			if (hit.gameObject == gameObject) continue;
+
+			Vector3 targetPos = hit.transform.position + Vector3.up * staffAimHeightOffset;
+			Vector3 toTarget = targetPos - origin;
+
+			float distance = toTarget.magnitude;
+			if (distance > staffAutoTargetRange) continue;
+
+			Vector3 dirToTarget = toTarget.normalized;
+			float angle = Vector3.Angle(aimDir, dirToTarget);
+
+			if (angle > staffAutoTargetAngle * 0.5f) continue;
+
+			float score = angle * 0.7f + distance * 0.3f;
+
+			if (score < bestScore)
+			{
+				bestScore = score;
+				target = hit.transform;
+				targetDir = dirToTarget;
+			}
+		}
+
+		return target != null;
+	}
+
+	private void UpdateStaffTargetPreview()
+	{
+		Vector3 origin = transform.position + transform.forward + Vector3.up * 1.2f;
+		Vector3 rawDir = playerRelativeCam.GetCameraForward().normalized;
+
+		bool hasTarget = TryGetStaffAutoTarget(
+			origin,
+			rawDir,
+			out Transform target,
+			out Vector3 dir
+		);
+
+		if (hasTarget)
+		{
+			ShowStaffTargetIndicator(target.position);
+		}
+		else
+		{
+			HideStaffTargetIndicator();
+		}
+	}
+
+	private void ShowStaffTargetIndicator(Vector3 position)
+	{
+		if (staffTargetIndicatorPrefab == null) return;
+
+		if (currentStaffTargetIndicator == null)
+		{
+			currentStaffTargetIndicator = Instantiate(staffTargetIndicatorPrefab);
+		}
+
+		currentStaffTargetIndicator.SetActive(true);
+		currentStaffTargetIndicator.transform.position = position + Vector3.up * 0.05f;
+		currentStaffTargetIndicator.transform.rotation = Quaternion.identity;
+	}
+
+	private void HideStaffTargetIndicator()
+	{
+		if (currentStaffTargetIndicator != null)
+		{
+			currentStaffTargetIndicator.SetActive(false);
+		}
+	}
+
+	[ServerRpc]
+	private void RequestStopStaffChargeEffectServerRpc(ServerRpcParams rpcParams = default)
+	{
+		if (currentStaffChargeEffect != null && currentStaffChargeEffect.IsSpawned)
+		{
+			currentStaffChargeEffect.Despawn(true);
+			currentStaffChargeEffect = null;
+		}
+
+		if (currentStaffChargeSubEffect != null && currentStaffChargeSubEffect.IsSpawned)
+		{
+			currentStaffChargeSubEffect.Despawn(true);
+			currentStaffChargeSubEffect = null;
+		}
+	}
+
+	[ServerRpc]
+	private void RequestStaffReleaseEffectServerRpc(ServerRpcParams rpcParams = default)
+	{
+		ulong attackerClientId = rpcParams.Receive.SenderClientId;
+
+		if (!ServerManager.Instance.UserContexts.ContainsKey(attackerClientId)) return;
+
+		GameObject attackerObject = ServerManager.Instance.UserContexts[attackerClientId].PlayerObject;
+		if (attackerObject == null) return;
+
+		Transform attackerTransform = attackerObject.transform;
+
+		Vector3 spawnPos =
+			attackerTransform.position +
+			attackerTransform.forward * 0.8f +
+			Vector3.up * 1.0f;
+
+		Quaternion spawnRot = Quaternion.LookRotation(attackerTransform.forward);
+
+		if (staffReleaseEffectPrefab == null) return;
+
+		NetworkObject effectObj = Instantiate(staffReleaseEffectPrefab, spawnPos, spawnRot);
+		effectObj.Spawn(true);
+
+		StartCoroutine(DespawnEffectAfterDelay(effectObj, staffReleaseEffectDuration));
+	}
+
+	[ServerRpc]
+	private void RequestStaffChargeEffectServerRpc(ServerRpcParams rpcParams = default)
+	{
+		ulong attackerClientId = rpcParams.Receive.SenderClientId;
+
+		if (!ServerManager.Instance.UserContexts.ContainsKey(attackerClientId)) return;
+
+		GameObject attackerObject = ServerManager.Instance.UserContexts[attackerClientId].PlayerObject;
+		if (attackerObject == null) return;
+
+		Transform attackerTransform = attackerObject.transform;
+
+		Vector3 spawnPos =
+			attackerTransform.position +
+			Vector3.up * 1.0f;
+
+		Quaternion spawnRot = Quaternion.LookRotation(attackerTransform.forward);
+
+		if (staffChargeEffectPrefab == null) return;
+
+		if (currentStaffChargeEffect != null && currentStaffChargeEffect.IsSpawned)
+		{
+			currentStaffChargeEffect.Despawn(true);
+		}
+
+		if (currentStaffChargeSubEffect != null && currentStaffChargeSubEffect.IsSpawned)
+		{
+			currentStaffChargeSubEffect.Despawn(true);
+		}
+
+		//currentStaffChargeEffect = Instantiate(staffChargeEffectPrefab, spawnPos, spawnRot);
+		//currentStaffChargeEffect.Spawn(true);
+
+		//currentStaffChargeSubEffect = Instantiate(staffChargeSubEffectPrefab, spawnPos + Vector3.up * 1.5f, spawnRot);
+		//currentStaffChargeSubEffect.Spawn(true);
+
+		currentStaffChargeEffect = Instantiate(staffChargeEffectPrefab, spawnPos, spawnRot);
+		currentStaffChargeEffect.Spawn(true);
+		currentStaffChargeEffect.transform.SetParent(attackerTransform);
+		
+
+		currentStaffChargeSubEffect = Instantiate(staffChargeSubEffectPrefab, spawnPos + Vector3.up * 1.5f, spawnRot);
+		currentStaffChargeSubEffect.Spawn(true);
+		currentStaffChargeSubEffect.transform.SetParent(attackerTransform);
+		
+	}
+
 	private void StartStaffCharge()
 	{
 		if (!clientManager.IsInitialized.Value) return;
@@ -565,13 +1085,14 @@ public class PlayerCombat : NetworkBehaviour
 		RefreshCombatCamera();
 
 		animSync.RequestAnimationServerRpc(PlayerAnimationEnum.StaffCharge);
+		RequestStaffChargeEffectServerRpc();
 	}
 
-	private IEnumerator StaffFireDelayRoutine()
+	private IEnumerator StaffFireDelayRoutine(Vector3 dir)
 	{
 		yield return new WaitForSeconds(0.7f);
 
-		RequestStaffAttackServerRpc();
+		RequestStaffAttackServerRpc(dir);
 
 		isCastingStaff = false;
 		_isAttacking = false;
@@ -587,6 +1108,7 @@ public class PlayerCombat : NetworkBehaviour
 		float chargeTime = Time.time - staffChargeStartTime;
 
 		isChargingStaff = false;
+		RequestStopStaffChargeEffectServerRpc();
 
 		if (chargeTime < minStaffChargeTime)
 		{
@@ -594,6 +1116,7 @@ public class PlayerCombat : NetworkBehaviour
 			isCastingStaff = false;
 			_isAttacking = false;
 			animSync.RequestAnimationServerRpc(PlayerAnimationEnum.Neutral);
+			HideStaffTargetIndicator();
 			return;
 		}
 
@@ -601,7 +1124,16 @@ public class PlayerCombat : NetworkBehaviour
 		playerRelativeCam.RotatePlayerToCameraWhenAct();
 		RefreshCombatCamera();
 		animSync.RequestAnimationServerRpc(PlayerAnimationEnum.StaffAttack);
-		StartCoroutine(StaffFireDelayRoutine());
+		RequestStaffReleaseEffectServerRpc();
+
+		Vector3 origin = transform.position + transform.forward + Vector3.up * 1.2f;
+		Vector3 rawDir = playerRelativeCam.GetCameraForward().normalized;
+		Vector3 dir = rawDir;
+
+		TryGetStaffAutoTarget(origin, rawDir, out _, out dir);
+
+		StartCoroutine(StaffFireDelayRoutine(dir));
+		HideStaffTargetIndicator();
 	}
 
 	//private IEnumerator ArrowAttackRoutine()
@@ -620,12 +1152,14 @@ public class PlayerCombat : NetworkBehaviour
 	private IEnumerator ArrowSkillRoutine()
 	{
 		isCastingArrow = true;
-		for(int i = 0; i < 2; i++)
+		RequestArrowReleaseEffectServerRpc();
+
+		for (int i = 0; i < 2; i++)
 		{
 			animSync.RequestAnimationServerRpc(PlayerAnimationEnum.ArrowAttack);
 
 			yield return new WaitForSeconds(0.2f);
-			Vector3 dir = (playerRelativeCam.GetCameraForward() + Vector3.up * 0.5f).normalized;
+			Vector3 dir = (playerRelativeCam.GetCameraForward() + Vector3.up * 0.15f).normalized;
 			RequestArrowSkillServerRpc(dir);
 		}
 
@@ -656,43 +1190,64 @@ public class PlayerCombat : NetworkBehaviour
 		Vector3 origin = attackOrigin != null ? attackOrigin.position : attackerTransform.position;
 		Vector3 forward = attackerTransform.forward;
 
-		PlayerHealth bestTargetPlayer = null;
-        EnemyHealth bestTargetEnemy = null;
-        float bestDistance = float.MaxValue;
+		// PlayerHealth bestTargetPlayer = null;
+		// EnemyHealth bestTargetEnemy = null;
+		IHealth bestTarget = null;
+		float bestScore = float.MaxValue;
 
-        int targetLayer = LayerMask.GetMask("Player", "Enemy");
-        Collider[] hitColliders = Physics.OverlapSphere(origin, attackRange, targetLayer);
+		int targetLayer = LayerMask.GetMask("Player", "Enemy", "AIPlayer");
 
-        foreach (var hit in hitColliders) // 에너미도 공격 대상으로 하기 위해 방식을 바꿨습니다.
-        {
-            if (hit.gameObject == attackerObject) continue;
+		Vector3 capsuleStart = origin + Vector3.up * 0.5f;
+		Vector3 capsuleEnd =
+			origin +
+			forward * swordRange +
+			Vector3.up * 0.5f;
 
-            Vector3 targetPos = hit.transform.position;
-            Vector3 toTarget = targetPos - origin;
-            float distance = toTarget.magnitude;
+		Collider[] hitColliders = Physics.OverlapCapsule(
+			capsuleStart,
+			capsuleEnd,
+			swordHitRadius,
+			targetLayer
+		);
 
-            if (distance > attackRange) continue;
+		foreach (var hit in hitColliders)
+		{
+			if (hit.gameObject == attackerObject) continue;
 
-            Vector3 dirToTarget = toTarget.normalized;
-            float angle = Vector3.Angle(forward, dirToTarget);
+			// PlayerHealth pHealth = hit.GetComponent<PlayerHealth>();
+			// EnemyHealth eHealth = hit.GetComponent<EnemyHealth>();
+			IHealth health = hit.GetComponent<IHealth>();
 
-            if (angle > attackAngle * 0.5f) continue;
+			if (health == null) continue;
 
-            if (distance < bestDistance)
-            {
-                PlayerHealth pHealth = hit.GetComponent<PlayerHealth>();
-                EnemyHealth eHealth = hit.GetComponent<EnemyHealth>();
+			Vector3 targetPos = hit.ClosestPoint(origin);
+			Vector3 toTarget = targetPos - origin;
 
-                if (pHealth != null || eHealth != null)
-                {
-                    bestDistance = distance;
-                    bestTargetPlayer = pHealth;
-                    bestTargetEnemy = eHealth;
-                }
-            }
-        }
+			float distance = toTarget.magnitude;
+			if (distance > swordRange + swordHitRadius) continue;
 
-        if (bestTargetPlayer != null || bestTargetEnemy != null)
+			Vector3 flatForward = Vector3.ProjectOnPlane(forward, Vector3.up).normalized;
+			Vector3 flatToTarget = Vector3.ProjectOnPlane(toTarget, Vector3.up).normalized;
+
+			float angle = Vector3.Angle(flatForward, flatToTarget);
+
+			bool isCloseEnough = distance <= swordCloseHitRange;
+			bool isInFrontArc = angle <= swordAngle * 0.5f;
+
+			if (!isCloseEnough && !isInFrontArc) continue;
+
+			float score = distance + angle * 0.02f;
+
+			if (score < bestScore)
+			{
+				bestScore = score;
+				// bestTargetPlayer = pHealth;
+				// bestTargetEnemy = eHealth;
+				bestTarget = health;
+			}
+		}
+
+		if (bestTarget != null)
         {
 			float baseDamage = playerRuntimeStat.ATK.Value;
 			float comboMultiplier = comboIndex switch
@@ -719,21 +1274,67 @@ public class PlayerCombat : NetworkBehaviour
 				damageInfo.isCritical = true;
 			}
 
-            if (bestTargetPlayer != null) 
-            {
-                bestTargetPlayer.TakeDamage(damageInfo);
-                NotifyHitClientRpc(bestTargetPlayer.OwnerClientId);
-            }
-            else if (bestTargetEnemy != null) 
-            {
-                bestTargetEnemy.TakeDamage(damageInfo);
-            }
+			bestTarget?.TakeDamage(damageInfo);
+            // if (bestTargetPlayer != null) 
+            // {
+            //     bestTargetPlayer.TakeDamage(damageInfo);
+            //     NotifyHitClientRpc(bestTargetPlayer.OwnerClientId);
+            // }
+            // else if (bestTargetEnemy != null) 
+            // {
+            //     bestTargetEnemy.TakeDamage(damageInfo);
+            // }
         }
 	}
-	
+
+	[ServerRpc]
+	private void RequestSwordAttackEffectServerRpc(int comboIndex, ServerRpcParams rpcParams = default)
+	{
+		ulong attackerClientId = rpcParams.Receive.SenderClientId;
+
+		if (!ServerManager.Instance.UserContexts.ContainsKey(attackerClientId)) return;
+
+		GameObject attackerObject = ServerManager.Instance.UserContexts[attackerClientId].PlayerObject;
+		if (attackerObject == null) return;
+
+		Transform attackerTransform = attackerObject.transform;
+
+		Vector3 spawnPos =
+			attackerTransform.position +
+			attackerTransform.forward * 1.2f +
+			Vector3.up * 1.0f;
+
+		Quaternion spawnRot = Quaternion.LookRotation(attackerTransform.forward);
+
+		NetworkObject effectPrefab = comboIndex switch
+		{
+			1 => swordAttackEffect1,
+			2 => swordAttackEffect2,
+			3 => swordAttackEffect3,
+			_ => null
+		};
+
+		if (effectPrefab == null) return;
+
+		NetworkObject effectObj = Instantiate(effectPrefab, spawnPos, spawnRot);
+		effectObj.Spawn(true);
+
+		StartCoroutine(DespawnEffectAfterDelay(effectObj, 2f));
+	}
+
+	private IEnumerator DespawnEffectAfterDelay(NetworkObject effectObj, float delay)
+	{
+		yield return new WaitForSeconds(delay);
+
+		if (effectObj != null && effectObj.IsSpawned)
+		{
+			effectObj.Despawn(true);
+		}
+	}
+
 	// 스태프 공격
 	[ServerRpc]
-	private void RequestStaffAttackServerRpc(ServerRpcParams rpcParams = default)
+	private void RequestStaffAttackServerRpc(Vector3 dir, ServerRpcParams rpcParams = default)
 	{
 		ulong attackerClientId = rpcParams.Receive.SenderClientId;
 		if (!ServerManager.Instance.UserContexts.ContainsKey(attackerClientId)) return;
@@ -743,12 +1344,13 @@ public class PlayerCombat : NetworkBehaviour
 
 		Transform attackerTransform = attackerObject.transform;
 		Vector3 spawnPos = attackerTransform.position + attackerTransform.forward + Vector3.up * 1.2f;
-		Vector3 dir = attackerTransform.forward;
+
+		Vector3 finalDir = dir.normalized;
 
 		NetworkObject projectileObj = Instantiate(
 			magicProjectilePrefab,
 			spawnPos,
-			Quaternion.LookRotation(dir)
+			Quaternion.LookRotation(finalDir)
 		);
 
 		MagicProjectile projectile = projectileObj.GetComponent<MagicProjectile>();
@@ -757,8 +1359,9 @@ public class PlayerCombat : NetworkBehaviour
 		projectile.Initialize(
 			attackerClientId,
 			playerRuntimeStat.ATK.Value,
-			dir
+			finalDir
 		);
+
 		projectileObj.Spawn();
 	}
 
@@ -776,18 +1379,18 @@ public class PlayerCombat : NetworkBehaviour
 
 		GameObject attackerObject = ServerManager.Instance.UserContexts[attackerClientId].PlayerObject;
 		if (attackerObject == null) return;
-
 		Transform attackerTransform = attackerObject.transform;
-
 		Vector3 spawnPos =
 			attackerTransform.position +
 			attackerTransform.forward +
 			Vector3.up * 1.2f;
 
+		Vector3 finalDir = dir.normalized;
+
 		NetworkObject projectileObj = Instantiate(
 			arrowProjectilePrefab,
 			spawnPos,
-			Quaternion.LookRotation(dir)
+			Quaternion.LookRotation(finalDir)
 		);
 
 		ArrowProjectile projectile = projectileObj.GetComponent<ArrowProjectile>();
@@ -798,7 +1401,7 @@ public class PlayerCombat : NetworkBehaviour
 		projectile.Initialize(
 			attackerClientId,
 			finalDamage,
-			dir
+			finalDir
 		);
 		projectile.SetSpeed(arrowSpeed);
 		projectileObj.Spawn();
@@ -828,7 +1431,7 @@ public class PlayerCombat : NetworkBehaviour
 
 		projectile.Initialize(
 			attackerClientId,
-			playerRuntimeStat.ATK.Value * 2f,
+			playerRuntimeStat.ATK.Value * 1.75f,
 			dir
 		);
 		projectileObj.Spawn();
@@ -844,8 +1447,9 @@ public class PlayerCombat : NetworkBehaviour
 		if (attackerObject == null) return;
 
 		Transform attackerTransform = attackerObject.transform;
-		Vector3 spawnPos = attackerTransform.position + attackerTransform.forward * 0.0f + Vector3.up * 2.5f + attackerTransform.right * 0.75f;
-		Vector3 dir = attackerTransform.forward - Vector3.up * 0.1f;
+		// Vector3 spawnPos = attackerTransform.position + attackerTransform.forward * 0.0f + Vector3.up * 2.5f + attackerTransform.right * 0.75f;
+		Vector3 spawnPos = attackerTransform.position + attackerTransform.forward * 1.25f + Vector3.up * 1.5f;
+		Vector3 dir = attackerTransform.forward - Vector3.up * 0.05f;
 
 		NetworkObject projectileObj = Instantiate(
 			staffSkillPrefab,
@@ -898,14 +1502,14 @@ public class PlayerCombat : NetworkBehaviour
 		}
 	}
 
-	[ClientRpc]
-	private void NotifyHitClientRpc(ulong targetClientId)
-	{
-		if (NetworkManager.Singleton.LocalClientId != targetClientId)
-			return;
+	// [ClientRpc]
+	// private void NotifyHitClientRpc(ulong targetClientId)
+	// {
+	// 	if (NetworkManager.Singleton.LocalClientId != targetClientId)
+	// 		return;
 
-		Debug.Log("�ǰ� ������");
-	}
+	// 	Debug.Log("�ǰ� ������");
+	// }
 }
 
 //[ServerRpc]

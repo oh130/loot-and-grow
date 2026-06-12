@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class StaffSkill : NetworkBehaviour
 {
+	[SerializeField] private bool isAIPlayerAttack = false;
 	private float lifeTime = 4.8f;
 
 	private ulong attackerClientId;
@@ -52,36 +53,50 @@ public class StaffSkill : NetworkBehaviour
 	private void OnParticleCollision(GameObject other)
 	{
 		if (!IsServer || !initialized) return;
-		PlayerHealth pHealth = other.GetComponent<PlayerHealth>();
-        EnemyHealth eHealth = other.GetComponent<EnemyHealth>();
 
-        if (pHealth == null && eHealth == null) return;
-        if (pHealth != null && pHealth.OwnerClientId == attackerClientId) return;
-
-        DamageInfo damageInfo = new DamageInfo()
+		if(isAIPlayerAttack)
 		{
-			damage = damage,
-			attackerClientId = attackerClientId,
-			knockbackDir = direction,
-			knockbackPower = 0f,
-			isCritical = false
-		};
+			IHealth targetHealth = other.GetComponent<IHealth>();
+			AIPlayerHealth targetAIPlayer = other.GetComponent<AIPlayerHealth>();
 
-		if(Random.Range(0, 1f) < ServerManager.Instance.UserContexts[attackerClientId].PlayerRuntimeStat.CHC.Value)
-		{
-			damageInfo.damage = damageInfo.damage * 1.5f;
-			damageInfo.isCritical = true;
+			if (targetHealth == null) return;
+			if (targetAIPlayer != null && targetAIPlayer.NetworkObjectId == attackerClientId) return;
+
+			DamageInfo damageInfo = new DamageInfo()
+			{
+				damage = damage,
+				attackerClientId = 0,
+				knockbackDir = direction,
+				knockbackPower = 0f,
+				isCritical = false
+			};
+
+			targetHealth?.TakeDamage(damageInfo);
 		}
+		else
+		{
+			IHealth targetHealth = other.GetComponent<IHealth>();
+			PlayerHealth targetPlayer = other.GetComponent<PlayerHealth>();
 
-        if (pHealth != null)
-        {
-            pHealth.TakeDamage(damageInfo);
-        }
-        else if (eHealth != null)
-        {
-            eHealth.TakeDamage(damageInfo);
-        }
-		// if (NetworkObject != null && NetworkObject.IsSpawned)
-		// 	NetworkObject.Despawn();
+			if (targetHealth == null) return;
+			if (targetPlayer != null && targetPlayer.OwnerClientId == attackerClientId) return;
+
+			DamageInfo damageInfo = new DamageInfo()
+			{
+				damage = damage,
+				attackerClientId = attackerClientId,
+				knockbackDir = direction,
+				knockbackPower = 0f,
+				isCritical = false
+			};
+
+			if(Random.Range(0, 1f) < ServerManager.Instance.UserContexts[attackerClientId].PlayerRuntimeStat.CHC.Value)
+			{
+				damageInfo.damage = damageInfo.damage * 1.5f;
+				damageInfo.isCritical = true;
+			}
+
+			targetHealth?.TakeDamage(damageInfo);
+		}
 	}
 }

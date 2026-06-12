@@ -4,6 +4,7 @@ using UnityEngine;
 public class MagicProjectile : NetworkBehaviour
 {
 	[SerializeField] private bool isEnemyAttack = false;
+	[SerializeField] private bool isAIPlayerAttack = false;
 	[SerializeField] private float speed = 10f;
 	[SerializeField] private float lifeTime = 2f;
 
@@ -46,13 +47,55 @@ public class MagicProjectile : NetworkBehaviour
 	{
 		if (!IsServer || !initialized) return;
 
-		if(!isEnemyAttack)
+		if(isEnemyAttack)
 		{
-			PlayerHealth pHealth = other.GetComponent<PlayerHealth>();
-			EnemyHealth eHealth = other.GetComponent<EnemyHealth>();
+			IHealth targetHealth = other.GetComponent<IHealth>();
+			EnemyHealth targetEnemy = other.GetComponent<EnemyHealth>();
 
-			if (pHealth == null && eHealth == null) return;
-			if (pHealth != null && pHealth.OwnerClientId == attackerClientId) return;
+			if (targetHealth == null || targetEnemy != null) return; // 에너미끼리는 안 때리도록 검사
+
+			DamageInfo damageInfo = new DamageInfo()
+			{
+				damage = damage,
+				attackerClientId = 0,
+				knockbackDir = direction,
+				knockbackPower = 0f,
+				isCritical = false
+			};
+
+			targetHealth?.TakeDamage(damageInfo);
+
+			if (NetworkObject != null && NetworkObject.IsSpawned)
+				NetworkObject.Despawn();
+		}
+		else if(isAIPlayerAttack)
+		{
+			IHealth targetHealth = other.GetComponent<IHealth>();
+			AIPlayerHealth targetAIPlayer = other.GetComponent<AIPlayerHealth>();
+			if(targetHealth == null) return;
+			if(targetAIPlayer != null && targetAIPlayer.NetworkObjectId == attackerClientId) return;
+
+			DamageInfo damageInfo = new DamageInfo()
+			{
+				damage = damage,
+				attackerClientId = 0,
+				knockbackDir = direction,
+				knockbackPower = 0f,
+				isCritical = false
+			};
+
+			targetHealth?.TakeDamage(damageInfo);
+
+			if (NetworkObject != null && NetworkObject.IsSpawned)
+				NetworkObject.Despawn();
+		}
+		else
+		{
+			IHealth targetHealth = other.GetComponent<IHealth>();
+			PlayerHealth targetPlayer = other.GetComponent<PlayerHealth>();
+
+			if (targetHealth == null) return;
+			if (targetPlayer != null && targetPlayer.OwnerClientId == attackerClientId) return;
 
 			DamageInfo damageInfo = new DamageInfo()
 			{
@@ -69,39 +112,10 @@ public class MagicProjectile : NetworkBehaviour
 				damageInfo.isCritical = true;
 			}
 
-			if (pHealth != null)
-			{
-				pHealth.TakeDamage(damageInfo);
-			}
-			else if (eHealth != null)
-			{
-				eHealth.TakeDamage(damageInfo);
-			}
+			targetHealth?.TakeDamage(damageInfo);
 
 			if (NetworkObject != null && NetworkObject.IsSpawned)
 				NetworkObject.Despawn();
-			}
-		else
-		{
-			PlayerHealth pHealth = other.GetComponent<PlayerHealth>();
-
-			if (pHealth == null) return;
-			DamageInfo damageInfo = new DamageInfo()
-			{
-				damage = damage,
-				attackerClientId = attackerClientId,
-				knockbackDir = direction,
-				knockbackPower = 0f,
-				isCritical = false
-			};
-
-			if (pHealth != null)
-			{
-				pHealth.TakeDamage(damageInfo);
-			}
-
-			if (NetworkObject != null && NetworkObject.IsSpawned)
-				NetworkObject.Despawn();
-		}        
-	}
+		}
+	}        
 }

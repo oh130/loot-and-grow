@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Mathematics;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -45,6 +46,22 @@ public class EnhanceEntry
     public float BowAdd;
     public int   CritChance;
     public int   ReqStone;
+    public int   DestroyRate;
+}
+
+// ─── ArmorEnhanceTable ─────────────────────────────────────────────────────
+[Serializable]
+public class ArmorEnhanceEntry
+{
+    public string SlotType;
+    public int    EnhanceLevel;
+    public float  DefAdd;
+    public float  HealthAdd;
+    public float  AtkAdd;
+    public float  MoveSpeedAdd;
+    public float  APSAdd;
+    public float  HPRAdd;
+    public int    DestroyRate;
 }
 
 // ─── EquipmentDetail ───────────────────────────────────────────────────────
@@ -111,4 +128,12 @@ public class LootEntry
     public float DropChance;
     public int MinQty;
     public int MaxQty;
+
+    public LootEntry(int itemID)
+    {
+        ItemID = itemID;
+        DropChance = 1f;
+        MinQty = 1;
+        MaxQty = 1;
+    }
 }

@@ -4,6 +4,7 @@ using UnityEngine;
 public class ArrowProjectile : NetworkBehaviour
 {
 	[SerializeField] private bool isEnemyAttack = false;
+	[SerializeField] private bool isAIPlayerAttack = false;
 	[SerializeField] private float speed = 15f;
     [SerializeField] private float gravity = 9.8f;
     [SerializeField] private float lifeTime = 2f;
@@ -59,12 +60,53 @@ public class ArrowProjectile : NetworkBehaviour
 	{
 		if (!IsServer || !initialized) return;
 
-		if(!isEnemyAttack)
+		if(isEnemyAttack)
 		{
-			PlayerHealth targetPlayer = other.GetComponent<PlayerHealth>();
+			IHealth targetHealth = other.GetComponent<IHealth>();
 			EnemyHealth targetEnemy = other.GetComponent<EnemyHealth>();
 
-			if (targetPlayer == null && targetEnemy == null) return;
+			if (targetHealth == null || targetEnemy != null) return; // 에너미끼리는 안 때리도록 검사
+
+			DamageInfo damageInfo = new DamageInfo()
+			{
+				damage = damage,
+				attackerClientId = 0,
+				knockbackDir = direction,
+				knockbackPower = 0f,
+				isCritical = false
+			};
+			targetHealth?.TakeDamage(damageInfo);
+
+			if (NetworkObject != null && NetworkObject.IsSpawned)
+				NetworkObject.Despawn();
+		}
+		else if(isAIPlayerAttack)
+		{
+			IHealth targetHealth = other.GetComponent<IHealth>();
+			AIPlayerHealth targetAIPlayer = other.GetComponent<AIPlayerHealth>();
+			if(targetHealth == null) return;
+			if(targetAIPlayer != null && targetAIPlayer.NetworkObjectId == attackerClientId) return;
+
+			DamageInfo damageInfo = new DamageInfo()
+			{
+				damage = damage,
+				attackerClientId = 0,
+				knockbackDir = direction,
+				knockbackPower = 0f,
+				isCritical = false
+			};
+
+			targetHealth?.TakeDamage(damageInfo);
+
+			if (NetworkObject != null && NetworkObject.IsSpawned)
+				NetworkObject.Despawn();
+		}
+		else
+		{
+			IHealth targetHealth = other.GetComponent<IHealth>();
+			PlayerHealth targetPlayer = other.GetComponent<PlayerHealth>();
+
+			if (targetHealth == null) return;
 			if (targetPlayer != null && targetPlayer.OwnerClientId == attackerClientId) return;
 
 			DamageInfo damageInfo = new DamageInfo()
@@ -81,38 +123,7 @@ public class ArrowProjectile : NetworkBehaviour
                 damageInfo.damage = damageInfo.damage * 1.5f;
 				damageInfo.isCritical = true;
 			}
-
-			if (targetPlayer != null)
-			{
-				targetPlayer.TakeDamage(damageInfo);
-			}
-			else if (targetEnemy != null)
-			{
-				targetEnemy.TakeDamage(damageInfo);
-			}
-
-			if (NetworkObject != null && NetworkObject.IsSpawned)
-				NetworkObject.Despawn();
-		}
-		else
-		{
-			PlayerHealth targetPlayer = other.GetComponent<PlayerHealth>();
-
-			if (targetPlayer == null) return;
-
-			DamageInfo damageInfo = new DamageInfo()
-			{
-				damage = damage,
-				attackerClientId = attackerClientId,
-				knockbackDir = direction,
-				knockbackPower = 0f,
-				isCritical = false
-			};
-
-			if (targetPlayer != null)
-			{
-				targetPlayer.TakeDamage(damageInfo);
-			}
+			targetHealth?.TakeDamage(damageInfo);
 
 			if (NetworkObject != null && NetworkObject.IsSpawned)
 				NetworkObject.Despawn();
