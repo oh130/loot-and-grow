@@ -116,5 +116,5 @@ Tools/              # Google Sheets → JSON 변환 스크립트
 
 <img width="975" height="587" alt="image" src="https://github.com/user-attachments/assets/dd958e6c-dfbd-467e-87a5-13886d4603f7" />
 
-2026 성남 인디크래프트 챌린저 부문 122팀 중 TOP 20 선정
-산학프로젝트 교과 성취도 A+
+2026 성남 인디크래프트 챌린저 부문 122팀 중 TOP 20 선정.
+산학프로젝트 교과 성취도 A+.
